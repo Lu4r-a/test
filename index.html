@@ -4,12 +4,15 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Chicken Games</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         :root {
             --bg-color: #121212;
             --text-color: #ffffff;
             --accent-color: #ffcc00;
             --panel-bg: #1e1e1e;
+            --discord-blurple: #5865F2;
+            --discord-dark: #2f3136;
         }
 
         [data-theme="light"] {
@@ -26,9 +29,65 @@
             background-color: var(--bg-color);
             color: var(--text-color);
             transition: background-color 0.3s, color 0.3s;
+            overflow-x: hidden;
+            display: flex;
+            height: 100vh;
+        }
+
+        /* Discord Style Sidebar */
+        #social-sidebar {
+            width: 300px;
+            background: var(--discord-dark);
             display: flex;
             flex-direction: column;
-            min-height: 100vh;
+            border-right: 1px solid #202225;
+            padding: 15px;
+            z-index: 10;
+        }
+
+        .auth-box, .friends-box, .chat-box {
+            background: #202225;
+            padding: 10px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+        }
+
+        input {
+            width: 90%;
+            padding: 8px;
+            margin-bottom: 5px;
+            border-radius: 4px;
+            border: none;
+            background: #40444b;
+            color: white;
+        }
+
+        .social-btn {
+            background: var(--discord-blurple);
+            color: white;
+            border: none;
+            padding: 8px;
+            width: 100%;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+
+        #message-list {
+            height: 150px;
+            overflow-y: auto;
+            font-size: 0.8rem;
+            margin-bottom: 5px;
+            background: #36393f;
+            padding: 5px;
+        }
+
+        /* Main Content Area */
+        .main-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow-y: auto;
         }
 
         header {
@@ -38,85 +97,7 @@
             align-items: center;
         }
 
-        .nav-right {
-            display: flex;
-            align-items: center;
-            gap: 15px;
-        }
-
-        .profile-icon {
-            width: 40px;
-            height: 40px;
-            background: var(--accent-color);
-            color: #000;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-weight: bold;
-            cursor: pointer;
-            border: 2px solid transparent;
-            transition: 0.2s;
-        }
-
-        .profile-icon:hover { border-color: white; }
-
-        #games {
-            flex: 1;
-            padding: 20px;
-            max-width: 1200px;
-            margin: 0 auto;
-            width: 100%;
-        }
-
-        /* Modals */
-        .modal {
-            position: fixed;
-            top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0,0,0,0.85);
-            display: none;
-            justify-content: center;
-            align-items: center;
-            z-index: 2000;
-        }
-
-        .modal-content {
-            background: var(--panel-bg);
-            padding: 30px;
-            border-radius: 15px;
-            width: 320px;
-            text-align: center;
-        }
-
-        .modal input {
-            width: 90%;
-            padding: 10px;
-            margin: 10px 0;
-            background: #333;
-            border: 1px solid #444;
-            color: white;
-            border-radius: 5px;
-        }
-
-        .auth-btn {
-            background: var(--accent-color);
-            color: black;
-            border: none;
-            padding: 10px 20px;
-            font-weight: bold;
-            border-radius: 5px;
-            cursor: pointer;
-            width: 100%;
-            margin-top: 10px;
-        }
-
-        .stats-list {
-            text-align: left;
-            max-height: 200px;
-            overflow-y: auto;
-            margin-top: 15px;
-            font-size: 0.9rem;
-        }
+        h1 { color: var(--accent-color); margin: 0; font-size: 1.8rem; }
 
         .settings-btn {
             background: none;
@@ -126,181 +107,193 @@
             cursor: pointer;
             border-radius: 5px;
             font-weight: bold;
+            transition: 0.2s;
         }
 
-        footer { text-align: center; padding: 20px; opacity: 0.7; }
+        #games { padding: 20px; max-width: 1200px; margin: 0 auto; width: 100%; }
+
+        #settings-panel {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.8); display: none; justify-content: center;
+            align-items: center; z-index: 1000; opacity: 0; transition: opacity 0.3s ease;
+        }
+        #settings-panel.active { display: flex; opacity: 1; }
+        .settings-content { background: var(--panel-bg); padding: 30px; border-radius: 15px; width: 300px; }
+        footer { text-align: center; padding: 20px; font-size: 0.9rem; opacity: 0.7; }
         .heart { color: #ff4d4d; }
     </style>
 </head>
 <body>
 
-    <header>
-        <h1>Chicken Games</h1>
-        <div class="nav-right">
+    <div id="social-sidebar">
+        <h3 style="color: var(--accent-color); margin-top:0;">Chicken Social</h3>
+        
+        <div class="auth-box" id="auth-ui">
+            <input type="text" id="auth-user" placeholder="Username (for profile)">
+            <input type="email" id="auth-email" placeholder="Email (use fake@fake.com)">
+            <input type="password" id="auth-pass" placeholder="Password">
+            <button class="social-btn" onclick="handleAuth()">Login / Sign Up</button>
+        </div>
+
+        <div id="logged-in-ui" style="display:none;">
+            <p id="user-display" style="font-size:0.9rem;"></p>
+            
+            <div class="friends-box">
+                <p style="margin:0 0 5px 0; font-size:0.8rem; opacity:0.7;">ADD FRIEND</p>
+                <input type="text" id="friend-username" placeholder="Friend Username">
+                <button class="social-btn" style="background:#3ba55d;" onclick="addFriend()">Add</button>
+                <div id="friends-list" style="margin-top:10px; font-size:0.85rem;"></div>
+            </div>
+
+            <div class="chat-box">
+                <p style="margin:0 0 5px 0; font-size:0.8rem; opacity:0.7;">DIRECT MESSAGES</p>
+                <div id="message-list"></div>
+                <input type="text" id="msg-input" placeholder="Type a message...">
+                <button class="social-btn" onclick="sendMessage()">Send</button>
+            </div>
+            
+            <button class="social-btn" style="background:#ed4245; margin-top:10px;" onclick="logout()">Logout</button>
+        </div>
+    </div>
+
+    <div class="main-content">
+        <header>
+            <h1>Chicken Games</h1>
             <button class="settings-btn" onclick="toggleSettings()">Settings</button>
-            <div id="auth-section">
-                <button class="settings-btn" onclick="openModal('login-modal')">Login</button>
+        </header>
+
+        <div id="games"></div>
+
+        <div id="settings-panel">
+            <div class="settings-content">
+                <h2>Settings</h2>
+                <div class="setting-item">
+                    <label>Theme</label>
+                    <select id="theme-select" onchange="updateTheme(this.value)">
+                        <option value="dark">Dark Mode</option>
+                        <option value="light">Light Mode</option>
+                    </select>
+                </div>
+                <div class="setting-item">
+                    <label>Automatic Cloaking</label>
+                    <select id="cloak-select" onchange="updateCloak(this.value)">
+                        <option value="off">Off</option>
+                        <option value="on">On (About:Blank)</option>
+                    </select>
+                </div>
+                <button class="close-btn" onclick="toggleSettings()">Save & Close</button>
             </div>
-            <div id="user-profile" style="display:none;" onclick="openModal('profile-modal')">
-                <div class="profile-icon" id="user-initial">?</div>
-            </div>
         </div>
-    </header>
 
-    <div id="games"></div>
-
-    <div id="login-modal" class="modal">
-        <div class="modal-content">
-            <h2 id="auth-title">Login</h2>
-            <input type="text" id="username" placeholder="Username">
-            <input type="password" id="password" placeholder="Password">
-            <button class="auth-btn" onclick="handleAuth()">Submit</button>
-            <p style="font-size: 0.8rem; cursor:pointer;" onclick="toggleAuthMode()" id="auth-toggle">Need an account? Sign up</p>
-            <button class="auth-btn" style="background:#444; color:white; margin-top:5px;" onclick="closeModals()">Cancel</button>
-        </div>
+        <footer>
+            Made with <span class="heart">❤</span> by chickenmonkey278
+        </footer>
     </div>
-
-    <div id="profile-modal" class="modal">
-        <div class="modal-content">
-            <h2 id="profile-name">Profile</h2>
-            <hr border="0" height="1px" background="#444">
-            <h4>Activity Log</h4>
-            <div id="stats-container" class="stats-list"></div>
-            <button class="auth-btn" style="background:#ff4d4d; margin-top:20px;" onclick="logout()">Logout</button>
-            <button class="auth-btn" style="background:#444; color:white; margin-top:5px;" onclick="closeModals()">Close</button>
-        </div>
-    </div>
-
-    <div id="settings-panel" class="modal">
-        <div class="modal-content">
-            <h2>Settings</h2>
-            <div style="text-align:left;">
-                <label>Theme</label>
-                <select id="theme-select" onchange="updateTheme(this.value)" style="width:100%; padding:10px; margin-bottom:15px;">
-                    <option value="dark">Dark Mode</option>
-                    <option value="light">Light Mode</option>
-                </select>
-                <label>Automatic Cloaking</label>
-                <select id="cloak-select" onchange="updateCloak(this.value)" style="width:100%; padding:10px;">
-                    <option value="off">Off</option>
-                    <option value="on">On (About:Blank)</option>
-                </select>
-            </div>
-            <button class="auth-btn" style="margin-top:20px;" onclick="toggleSettings()">Save & Close</button>
-        </div>
-    </div>
-
-    <footer>Made with <span class="heart">❤</span> by chickenmonkey278</footer>
 
     <script src="https://cdn.jsdelivr.net/gh/luminsdk/script@latest/lumin.min.js"></script>
     <script>
-        Lumin.init({ container: '#games', theme: 'dark' });
+        // --- SUPABASE CONFIG ---
+        const SB_URL = 'https://ktubysfkhindjtnygxba.supabase.co';
+        const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imt0dWJ5c2ZraGluZGp0bnlneGJhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzYzMTI5MzUsImV4cCI6MjA5MTg4ODkzNX0._28tnrLXjsdGaMXLlV_kUkWZjD0z3acF0BgGcSH12k4';
+        const supabase = supabase.createClient(SB_URL, SB_KEY);
 
-        // --- AUTH & TRACKING LOGIC ---
-        let currentUser = JSON.parse(sessionStorage.getItem('activeUser')) || null;
-        let isSignUp = false;
+        // --- AUTH LOGIC ---
+        async function handleAuth() {
+            const email = document.getElementById('auth-email').value;
+            const password = document.getElementById('auth-pass').value;
+            const username = document.getElementById('auth-user').value;
 
-        function toggleAuthMode() {
-            isSignUp = !isSignUp;
-            document.getElementById('auth-title').innerText = isSignUp ? 'Sign Up' : 'Login';
-            document.getElementById('auth-toggle').innerText = isSignUp ? 'Have an account? Login' : 'Need an account? Sign up';
-        }
-
-        function handleAuth() {
-            const u = document.getElementById('username').value;
-            const p = document.getElementById('password').value;
-            if(!u || !p) return alert("Fill all fields");
-
-            let users = JSON.parse(localStorage.getItem('chicken-users')) || {};
-
-            if (isSignUp) {
-                if(users[u]) return alert("Username taken");
-                users[u] = { password: p, stats: {} };
-                localStorage.setItem('chicken-users', JSON.stringify(users));
-                alert("Account created! Now login.");
-                toggleAuthMode();
-            } else {
-                if(users[u] && users[u].password === p) {
-                    currentUser = u;
-                    sessionStorage.setItem('activeUser', JSON.stringify(u));
-                    location.reload();
-                } else {
-                    alert("Invalid credentials");
-                }
+            // Try login
+            let { data, error } = await supabase.auth.signInWithPassword({ email, password });
+            
+            // If login fails, try signup
+            if (error) {
+                const { data: sData, error: sError } = await supabase.auth.signUp({ email, password });
+                if (sError) return alert(sError.message);
+                data = sData;
+                // Create profile
+                await supabase.from('profiles').insert([{ id: data.user.id, username: username }]);
             }
+            checkUser();
         }
 
-        function logout() {
-            sessionStorage.removeItem('activeUser');
+        async function logout() {
+            await supabase.auth.signOut();
             location.reload();
         }
 
-        // Time Tracking Logic
-        let startTime = Date.now();
-        window.onbeforeunload = function() {
-            if(currentUser) {
-                let users = JSON.parse(localStorage.getItem('chicken-users'));
-                let duration = Math.floor((Date.now() - startTime) / 1000 / 60); // minutes
-                if(duration > 0) {
-                    users[currentUser].stats['Total Playtime'] = (users[currentUser].stats['Total Playtime'] || 0) + duration;
-                    localStorage.setItem('chicken-users', JSON.stringify(users));
-                }
-            }
-        };
-
-        // UI Updates
-        function updateProfileUI() {
-            if(currentUser) {
-                document.getElementById('auth-section').style.display = 'none';
-                document.getElementById('user-profile').style.display = 'block';
-                document.getElementById('user-initial').innerText = currentUser[0].toUpperCase();
-                document.getElementById('profile-name').innerText = currentUser;
-                
-                let users = JSON.parse(localStorage.getItem('chicken-users'));
-                let stats = users[currentUser].stats;
-                let html = `Playtime: ${stats['Total Playtime'] || 0} mins<br><br><b>Recent Games:</b><br>`;
-                // Note: Lumin doesn't expose game titles easily, so we track general site usage.
-                document.getElementById('stats-container').innerHTML = html + "Gaming Session Active...";
+        async function checkUser() {
+            const { data: { user } } = await supabase.auth.getUser();
+            if (user) {
+                document.getElementById('auth-ui').style.display = 'none';
+                document.getElementById('logged-in-ui').style.display = 'block';
+                const { data } = await supabase.from('profiles').select('username').eq('id', user.id).single();
+                document.getElementById('user-display').innerText = `Logged in as: ${data?.username || 'Gamer'}`;
+                loadMessages();
+                listenMessages();
             }
         }
 
-        function openModal(id) { document.getElementById(id).style.display = 'flex'; }
-        function closeModals() { document.querySelectorAll('.modal').forEach(m => m.style.display = 'none'); }
+        // --- FRIENDS & DMS ---
+        async function addFriend() {
+            const name = document.getElementById('friend-username').value;
+            alert("Adding " + name + "... (Make sure the table exists!)");
+            // This pulls from the profiles table we made earlier
+            const { data } = await supabase.from('profiles').select('username').eq('username', name);
+            if (data.length > 0) {
+                const div = document.createElement('div');
+                div.innerText = "🟢 " + name;
+                document.getElementById('friends-list').appendChild(div);
+            } else { alert("User not found"); }
+        }
+
+        async function sendMessage() {
+            const content = document.getElementById('msg-input').value;
+            const { data: { user } } = await supabase.auth.getUser();
+            await supabase.from('messages').insert([{ sender_id: user.id, content: content }]);
+            document.getElementById('msg-input').value = '';
+        }
+
+        async function loadMessages() {
+            const { data } = await supabase.from('messages').select('*').order('created_at', { ascending: true }).limit(10);
+            const list = document.getElementById('message-list');
+            list.innerHTML = '';
+            data.forEach(m => {
+                list.innerHTML += `<div><strong>User:</strong> ${m.content}</div>`;
+            });
+        }
+
+        function listenMessages() {
+            supabase.channel('messages').on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages' }, payload => {
+                loadMessages();
+            }).subscribe();
+        }
 
         // --- ORIGINAL SETTINGS LOGIC ---
+        Lumin.init({ container: '#games', theme: 'dark' });
+        const panel = document.getElementById('settings-panel');
         function toggleSettings() {
-            const p = document.getElementById('settings-panel');
-            p.style.display = (p.style.display === 'flex') ? 'none' : 'flex';
+            if (panel.classList.contains('active')) {
+                panel.style.opacity = '0';
+                setTimeout(() => panel.classList.remove('active'), 300);
+            } else {
+                panel.classList.add('active');
+                setTimeout(() => panel.style.opacity = '1', 10);
+            }
         }
-
         function updateTheme(theme) {
             document.body.setAttribute('data-theme', theme);
             localStorage.setItem('chicken-theme', theme);
         }
-
-        function updateCloak(status) {
-            localStorage.setItem('chicken-cloak', status);
-        }
+        function updateCloak(status) { localStorage.setItem('chicken-cloak', status); }
 
         window.onload = () => {
-            updateProfileUI();
+            checkUser();
             const savedTheme = localStorage.getItem('chicken-theme') || 'dark';
             const savedCloak = localStorage.getItem('chicken-cloak') || 'off';
             updateTheme(savedTheme);
             document.getElementById('theme-select').value = savedTheme;
             document.getElementById('cloak-select').value = savedCloak;
-
-            if (savedCloak === 'on' && window.top === window.self) {
-                const url = window.location.href;
-                const win = window.open('about:blank', '_blank');
-                if (win) {
-                    const iframe = win.document.createElement('iframe');
-                    iframe.style = "border:none;width:100%;height:100vh;margin:0;";
-                    iframe.src = url;
-                    win.document.body.appendChild(iframe);
-                    window.location.replace('https://google.com');
-                }
-            }
         };
     </script>
 </body>
