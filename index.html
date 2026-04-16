@@ -21,29 +21,22 @@
         }
 
         body {
-            margin: 0;
-            padding: 0;
+            margin: 0; padding: 0;
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             background-color: var(--bg-color);
             color: var(--text-color);
             transition: background-color 0.3s, color 0.3s;
             overflow-x: hidden;
-            display: flex;
-            flex-direction: column;
+            display: flex; flex-direction: column;
             min-height: 100vh;
-            opacity: 0;
-            animation: fadeInPage 1s forwards;
+            opacity: 0; animation: fadeInPage 1s forwards;
         }
 
         @keyframes fadeInPage { to { opacity: 1; } }
 
-        /* Header & Nav */
         header {
             padding: 20px 50px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            background: rgba(0,0,0,0.2);
+            display: flex; justify-content: space-between; align-items: center;
         }
 
         .nav-buttons { display: flex; gap: 10px; }
@@ -51,49 +44,40 @@
         h1 { color: var(--accent-color); margin: 0; font-size: 1.8rem; }
 
         .btn {
-            background: none;
-            border: 2px solid var(--accent-color);
-            color: var(--accent-color);
-            padding: 8px 16px;
-            cursor: pointer;
-            border-radius: 5px;
-            font-weight: bold;
-            transition: 0.2s;
+            background: none; border: 2px solid var(--accent-color);
+            color: var(--accent-color); padding: 8px 16px;
+            cursor: pointer; border-radius: 5px; font-weight: bold; transition: 0.2s;
         }
 
         .btn:hover { background: var(--accent-color); color: #000; }
 
-        /* Games Container */
         #games { flex: 1; padding: 20px; max-width: 1200px; margin: 0 auto; width: 100%; }
 
         /* Overlay Panels (Settings, Friends, DMs) */
         .overlay {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0,0,0,0.9); display: none;
+            background: rgba(0,0,0,0.8); display: none;
             justify-content: center; align-items: center; z-index: 1000;
+            opacity: 0; transition: opacity 0.3s ease;
         }
 
-        .overlay.active { display: flex; }
+        .overlay.active { display: flex; opacity: 1; }
 
         .panel-content {
-            background: var(--panel-bg);
-            padding: 30px;
-            border-radius: 15px;
-            width: 400px;
-            max-height: 80vh;
-            overflow-y: auto;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            background: var(--panel-bg); padding: 30px; border-radius: 15px;
+            width: 350px; box-shadow: 0 10px 30px rgba(0,0,0,0.5);
         }
 
-        .input-group { margin-bottom: 15px; }
-        input, select {
+        .setting-item { margin-bottom: 20px; }
+        .setting-item label { display: block; margin-bottom: 10px; }
+
+        select, input {
             width: 100%; padding: 10px; border-radius: 5px; border: 1px solid #444;
-            background: #333; color: white; margin-top: 5px; box-sizing: border-box;
+            background: #333; color: white; box-sizing: border-box;
         }
 
         .close-btn { width: 100%; margin-top: 15px; }
 
-        /* Footer */
         footer { text-align: center; padding: 20px; font-size: 0.9rem; opacity: 0.7; }
         .heart { color: #ff4d4d; }
     </style>
@@ -103,9 +87,9 @@
     <header>
         <h1>Chicken Games</h1>
         <div class="nav-buttons">
-            <button class="btn" onclick="openPanel('friends-panel')">Friends</button>
-            <button class="btn" onclick="openPanel('dm-panel')">DMs</button>
-            <button class="btn" onclick="toggleSettings()">Settings</button>
+            <button class="btn" onclick="togglePanel('friends-panel')">Friends</button>
+            <button class="btn" onclick="togglePanel('dm-panel')">DMs</button>
+            <button class="btn" onclick="togglePanel('settings-panel')">Settings</button>
         </div>
     </header>
 
@@ -114,47 +98,47 @@
     <div id="settings-panel" class="overlay">
         <div class="panel-content">
             <h2>Settings</h2>
-            <div class="input-group">
+            <div class="setting-item">
                 <label>Theme</label>
                 <select id="theme-select" onchange="updateTheme(this.value)">
                     <option value="dark">Dark Mode</option>
                     <option value="light">Light Mode</option>
                 </select>
             </div>
-            <div class="input-group">
+            <div class="setting-item">
                 <label>Automatic Cloaking</label>
                 <select id="cloak-select" onchange="updateCloak(this.value)">
                     <option value="off">Off</option>
                     <option value="on">On (About:Blank)</option>
                 </select>
             </div>
-            <button class="btn close-btn" onclick="toggleSettings()">Save & Close</button>
+            <button class="btn close-btn" onclick="togglePanel('settings-panel')">Save & Close</button>
         </div>
     </div>
 
     <div id="friends-panel" class="overlay">
         <div class="panel-content">
-            <h2>Add Friend</h2>
-            <div class="input-group">
+            <h2>Friends</h2>
+            <div class="setting-item">
                 <input type="text" id="friend-search" placeholder="Enter username...">
-                <button class="btn" style="width:100%; margin-top:10px;" onclick="searchFriend()">Send Request</button>
+                <button class="btn" style="width:100%; margin-top:10px;" onclick="addFriend()">Add Friend</button>
             </div>
-            <p id="friend-status"></p>
-            <h3>Current Friends</h3>
-            <div id="friends-list">Log in to see friends.</div>
-            <button class="btn close-btn" onclick="closePanel('friends-panel')">Back to Games</button>
+            <p id="friend-status" style="font-size: 0.9rem;"></p>
+            <div id="friends-list" style="margin-top: 10px; max-height: 150px; overflow-y: auto;">
+                </div>
+            <button class="btn close-btn" onclick="togglePanel('friends-panel')">Close</button>
         </div>
     </div>
 
     <div id="dm-panel" class="overlay">
         <div class="panel-content">
-            <h2>Direct Messages</h2>
-            <div id="dm-list" style="height: 200px; background: #222; margin-bottom: 10px; padding: 10px; border-radius: 5px; overflow-y: auto;">
-                Select a friend to chat.
+            <h2>DMs</h2>
+            <div id="dm-chat" style="height: 150px; background: #222; padding: 10px; overflow-y: auto; margin-bottom: 10px; border-radius: 5px;">
+                Select a friend to DM.
             </div>
-            <input type="text" id="dm-input" placeholder="Type a message...">
-            <button class="btn" style="width:100%; margin-top:10px;" onclick="sendDM()">Send</button>
-            <button class="btn close-btn" onclick="closePanel('dm-panel')">Back to Games</button>
+            <input type="text" id="dm-input" placeholder="Message...">
+            <button class="btn" style="width:100%; margin-top:10px;">Send</button>
+            <button class="btn close-btn" onclick="togglePanel('dm-panel')">Close</button>
         </div>
     </div>
 
@@ -162,69 +146,70 @@
 
     <script src="https://cdn.jsdelivr.net/gh/luminsdk/script@latest/lumin.min.js"></script>
     <script>
-        // 1. SUPABASE CONNECTION
+        // --- SUPABASE SETUP ---
         const SB_URL = 'https://ktubysfkhindjtnygxba.supabase.co';
         const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imt0dWJ5c2ZraGluZGp0bnlneGJhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzYzMTI5MzUsImV4cCI6MjA5MTg4ODkzNX0._28tnrLXjsdGaMXLlV_kUkWZjD0z3acF0BgGcSH12k4';
         const supabase = supabase.createClient(SB_URL, SB_KEY);
 
-        // 2. LUMIN INITIALIZATION (Your Games)
+        // --- LUMIN GAMES ---
         Lumin.init({ container: '#games', theme: 'dark' });
 
-        // 3. PANEL LOGIC
-        function openPanel(id) { document.getElementById(id).classList.add('active'); }
-        function closePanel(id) { document.getElementById(id).classList.remove('active'); }
-
-        const settingsPanel = document.getElementById('settings-panel');
-        function toggleSettings() {
-            if (settingsPanel.classList.contains('active')) {
-                settingsPanel.style.opacity = '0';
-                setTimeout(() => settingsPanel.classList.remove('active'), 300);
+        // --- PANEL TOGGLE ---
+        function togglePanel(panelId) {
+            const el = document.getElementById(panelId);
+            if (el.classList.contains('active')) {
+                el.style.opacity = '0';
+                setTimeout(() => el.classList.remove('active'), 300);
             } else {
-                settingsPanel.classList.add('active');
-                setTimeout(() => settingsPanel.style.opacity = '1', 10);
+                el.classList.add('active');
+                setTimeout(() => el.style.opacity = '1', 10);
             }
         }
 
-        // 4. FRIEND LOGIC
-        async function searchFriend() {
+        // --- FRIEND LOGIC ---
+        async function addFriend() {
             const username = document.getElementById('friend-search').value;
             const status = document.getElementById('friend-status');
-
+            
+            // Check if user exists in the 'profiles' table
             const { data, error } = await supabase.from('profiles').select('id').eq('username', username).single();
 
             if (data) {
-                status.style.color = "lightgreen";
                 status.innerText = "Success! Friend request sent.";
-                // Logic to add to a "friends" table could go here
+                status.style.color = "lightgreen";
             } else {
-                status.style.color = "red";
                 status.innerText = "Invalid! This username is invalid.";
+                status.style.color = "red";
             }
         }
 
-        // 5. SETTINGS & CLOAKING
+        // --- SETTINGS LOGIC ---
         function updateTheme(theme) {
             document.body.setAttribute('data-theme', theme);
             localStorage.setItem('chicken-theme', theme);
         }
-        function updateCloak(status) { localStorage.setItem('chicken-cloak', status); }
+
+        function updateCloak(status) {
+            localStorage.setItem('chicken-cloak', status);
+        }
 
         window.onload = () => {
             const savedTheme = localStorage.getItem('chicken-theme') || 'dark';
             const savedCloak = localStorage.getItem('chicken-cloak') || 'off';
+
             updateTheme(savedTheme);
             document.getElementById('theme-select').value = savedTheme;
             document.getElementById('cloak-select').value = savedCloak;
 
-            // Cloak logic
             if (savedCloak === 'on' && window.top === window.self) {
+                const url = window.location.href;
                 const win = window.open('about:blank', '_blank');
                 if (win) {
                     win.document.body.style.margin = '0';
                     win.document.body.style.height = '100vh';
                     const iframe = win.document.createElement('iframe');
-                    iframe.style.width = '100%'; iframe.style.height = '100%';
-                    iframe.style.border = 'none'; iframe.src = window.location.href;
+                    iframe.style.border = 'none'; iframe.style.width = '100%';
+                    iframe.style.height = '100%'; iframe.src = url;
                     win.document.body.appendChild(iframe);
                     window.location.replace('https://google.com');
                 }
