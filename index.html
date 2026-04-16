@@ -29,54 +29,44 @@
             overflow-x: hidden;
             display: flex; flex-direction: column;
             min-height: 100vh;
-            opacity: 0; animation: fadeInPage 1s forwards;
         }
 
-        @keyframes fadeInPage { to { opacity: 1; } }
-
-        header {
-            padding: 20px 50px;
-            display: flex; justify-content: space-between; align-items: center;
-        }
-
-        .nav-buttons { display: flex; gap: 10px; }
-
+        header { padding: 20px 50px; display: flex; justify-content: space-between; align-items: center; }
         h1 { color: var(--accent-color); margin: 0; font-size: 1.8rem; }
 
-        .btn {
+        .nav-btns { display: flex; gap: 10px; }
+        .settings-btn, .social-btn {
             background: none; border: 2px solid var(--accent-color);
             color: var(--accent-color); padding: 8px 16px;
             cursor: pointer; border-radius: 5px; font-weight: bold; transition: 0.2s;
         }
-
-        .btn:hover { background: var(--accent-color); color: #000; }
+        .settings-btn:hover, .social-btn:hover { background: var(--accent-color); color: #000; }
 
         #games { flex: 1; padding: 20px; max-width: 1200px; margin: 0 auto; width: 100%; }
 
-        /* Overlay Panels (Settings, Friends, DMs) */
-        .overlay {
+        /* General Modal Styles */
+        .modal {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
             background: rgba(0,0,0,0.8); display: none;
             justify-content: center; align-items: center; z-index: 1000;
-            opacity: 0; transition: opacity 0.3s ease;
         }
-
-        .overlay.active { display: flex; opacity: 1; }
-
-        .panel-content {
-            background: var(--panel-bg); padding: 30px; border-radius: 15px;
+        .modal.active { display: flex; }
+        .modal-content {
+            background: var(--panel-bg); padding: 25px; border-radius: 15px;
             width: 350px; box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            max-height: 80vh; overflow-y: auto;
         }
 
-        .setting-item { margin-bottom: 20px; }
-        .setting-item label { display: block; margin-bottom: 10px; }
-
-        select, input {
-            width: 100%; padding: 10px; border-radius: 5px; border: 1px solid #444;
-            background: #333; color: white; box-sizing: border-box;
+        input, select, .close-btn, .action-btn {
+            width: 100%; padding: 10px; border-radius: 5px; margin-top: 10px;
+            border: 1px solid #444; background: #333; color: white; box-sizing: border-box;
         }
+        .action-btn { background: var(--accent-color); color: black; font-weight: bold; border: none; cursor: pointer; }
 
-        .close-btn { width: 100%; margin-top: 15px; }
+        /* Social UI */
+        #chat-box { height: 150px; border: 1px solid #444; overflow-y: scroll; padding: 5px; margin-top: 10px; font-size: 0.8rem; }
+        .msg { margin-bottom: 5px; }
+        .msg b { color: var(--accent-color); }
 
         footer { text-align: center; padding: 20px; font-size: 0.9rem; opacity: 0.7; }
         .heart { color: #ff4d4d; }
@@ -86,59 +76,59 @@
 
     <header>
         <h1>Chicken Games</h1>
-        <div class="nav-buttons">
-            <button class="btn" onclick="togglePanel('friends-panel')">Friends</button>
-            <button class="btn" onclick="togglePanel('dm-panel')">DMs</button>
-            <button class="btn" onclick="togglePanel('settings-panel')">Settings</button>
+        <div class="nav-btns">
+            <button class="social-btn" onclick="toggleModal('social-panel')">Social</button>
+            <button class="settings-btn" onclick="toggleModal('settings-panel')">Settings</button>
         </div>
     </header>
 
     <div id="games"></div>
 
-    <div id="settings-panel" class="overlay">
-        <div class="panel-content">
+    <div id="settings-panel" class="modal">
+        <div class="modal-content">
             <h2>Settings</h2>
-            <div class="setting-item">
-                <label>Theme</label>
-                <select id="theme-select" onchange="updateTheme(this.value)">
-                    <option value="dark">Dark Mode</option>
-                    <option value="light">Light Mode</option>
-                </select>
-            </div>
-            <div class="setting-item">
-                <label>Automatic Cloaking</label>
-                <select id="cloak-select" onchange="updateCloak(this.value)">
-                    <option value="off">Off</option>
-                    <option value="on">On (About:Blank)</option>
-                </select>
-            </div>
-            <button class="btn close-btn" onclick="togglePanel('settings-panel')">Save & Close</button>
+            <label>Theme</label>
+            <select id="theme-select" onchange="updateTheme(this.value)">
+                <option value="dark">Dark Mode</option>
+                <option value="light">Light Mode</option>
+            </select>
+            <label style="display:block; margin-top:15px;">Automatic Cloaking</label>
+            <select id="cloak-select" onchange="updateCloak(this.value)">
+                <option value="off">Off</option>
+                <option value="on">On (About:Blank)</option>
+            </select>
+            <button class="close-btn" onclick="toggleModal('settings-panel')">Save & Close</button>
         </div>
     </div>
 
-    <div id="friends-panel" class="overlay">
-        <div class="panel-content">
-            <h2>Friends</h2>
-            <div class="setting-item">
-                <input type="text" id="friend-search" placeholder="Enter username...">
-                <button class="btn" style="width:100%; margin-top:10px;" onclick="addFriend()">Add Friend</button>
+    <div id="social-panel" class="modal">
+        <div class="modal-content">
+            <div id="auth-ui">
+                <h2>Login / Signup</h2>
+                <input type="text" id="auth-username" placeholder="Username (for profile)">
+                <input type="email" id="auth-email" placeholder="Email">
+                <input type="password" id="auth-password" placeholder="Password">
+                <button class="action-btn" onclick="handleAuth('signup')">Sign Up</button>
+                <button class="action-btn" style="background:#555; color:white;" onclick="handleAuth('login')">Login</button>
             </div>
-            <p id="friend-status" style="font-size: 0.9rem;"></p>
-            <div id="friends-list" style="margin-top: 10px; max-height: 150px; overflow-y: auto;">
+
+            <div id="social-ui" style="display:none;">
+                <h2 id="welcome-user">Social</h2>
+                <div id="friend-controls">
+                    <input type="text" id="friend-username" placeholder="Friend's Username">
+                    <button class="action-btn" onclick="addFriend()">Add Friend</button>
                 </div>
-            <button class="btn close-btn" onclick="togglePanel('friends-panel')">Close</button>
-        </div>
-    </div>
-
-    <div id="dm-panel" class="overlay">
-        <div class="panel-content">
-            <h2>DMs</h2>
-            <div id="dm-chat" style="height: 150px; background: #222; padding: 10px; overflow-y: auto; margin-bottom: 10px; border-radius: 5px;">
-                Select a friend to DM.
+                <hr>
+                <div id="dm-ui">
+                    <p>Direct Messages</p>
+                    <select id="friend-list-select"><option>Select a friend</option></select>
+                    <div id="chat-box"></div>
+                    <input type="text" id="chat-input" placeholder="Type a message...">
+                    <button class="action-btn" onclick="sendDM()">Send</button>
+                </div>
+                <button class="close-btn" onclick="logout()">Logout</button>
             </div>
-            <input type="text" id="dm-input" placeholder="Message...">
-            <button class="btn" style="width:100%; margin-top:10px;">Send</button>
-            <button class="btn close-btn" onclick="togglePanel('dm-panel')">Close</button>
+            <button class="close-btn" onclick="toggleModal('social-panel')" style="margin-top:10px;">Close</button>
         </div>
     </div>
 
@@ -146,44 +136,114 @@
 
     <script src="https://cdn.jsdelivr.net/gh/luminsdk/script@latest/lumin.min.js"></script>
     <script>
-        // --- SUPABASE SETUP ---
-        const SB_URL = 'https://ktubysfkhindjtnygxba.supabase.co';
-        const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imt0dWJ5c2ZraGluZGp0bnlneGJhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzYzMTI5MzUsImV4cCI6MjA5MTg4ODkzNX0._28tnrLXjsdGaMXLlV_kUkWZjD0z3acF0BgGcSH12k4';
-        const supabase = supabase.createClient(SB_URL, SB_KEY);
+        // SUPABASE CONFIG
+        const SUPABASE_URL = 'https://ktubysfkhindjtnygxba.supabase.co';
+        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imt0dWJ5c2ZraGluZGp0bnlneGJhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzYzMTI5MzUsImV4cCI6MjA5MTg4ODkzNX0._28tnrLXjsdGaMXLlV_kUkWZjD0z3acF0BgGcSH12k4';
+        const supabase = bootstrap.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-        // --- LUMIN GAMES ---
+        let currentUser = null;
+
+        // Initialize Lumin
         Lumin.init({ container: '#games', theme: 'dark' });
 
-        // --- PANEL TOGGLE ---
-        function togglePanel(panelId) {
-            const el = document.getElementById(panelId);
-            if (el.classList.contains('active')) {
-                el.style.opacity = '0';
-                setTimeout(() => el.classList.remove('active'), 300);
+        function toggleModal(id) {
+            document.getElementById(id).classList.toggle('active');
+        }
+
+        // --- AUTH LOGIC ---
+        async function handleAuth(type) {
+            const email = document.getElementById('auth-email').value;
+            const password = document.getElementById('auth-password').value;
+            const username = document.getElementById('auth-username').value;
+
+            if (type === 'signup') {
+                const { data, error } = await supabase.auth.signUp({ email, password });
+                if (error) return alert(error.message);
+                // Create profile
+                await supabase.from('profiles').insert([{ id: data.user.id, username: username, friends: "" }]);
+                alert("Signup successful! You can now login.");
             } else {
-                el.classList.add('active');
-                setTimeout(() => el.style.opacity = '1', 10);
+                const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+                if (error) return alert(error.message);
+                checkUser();
             }
         }
 
-        // --- FRIEND LOGIC ---
+        async function checkUser() {
+            const { data: { user } } = await supabase.auth.getUser();
+            if (user) {
+                currentUser = user;
+                const { data: profile } = await supabase.from('profiles').select('*').eq('id', user.id).single();
+                document.getElementById('auth-ui').style.display = 'none';
+                document.getElementById('social-ui').style.display = 'block';
+                document.getElementById('welcome-user').innerText = `Hi, ${profile.username}`;
+                loadFriends(profile.friends);
+            }
+        }
+
+        async function logout() {
+            await supabase.auth.signOut();
+            location.reload();
+        }
+
+        // --- SOCIAL LOGIC ---
         async function addFriend() {
-            const username = document.getElementById('friend-search').value;
-            const status = document.getElementById('friend-status');
-            
-            // Check if user exists in the 'profiles' table
-            const { data, error } = await supabase.from('profiles').select('id').eq('username', username).single();
+            const fName = document.getElementById('friend-username').value;
+            const { data: target } = await supabase.from('profiles').select('*').eq('username', fName).single();
+            if (!target) return alert("User not found");
 
-            if (data) {
-                status.innerText = "Success! Friend request sent.";
-                status.style.color = "lightgreen";
-            } else {
-                status.innerText = "Invalid! This username is invalid.";
-                status.style.color = "red";
-            }
+            const { data: me } = await supabase.from('profiles').select('friends').eq('id', currentUser.id).single();
+            let newList = me.friends ? me.friends + "," + target.id : target.id;
+            
+            await supabase.from('profiles').update({ friends: newList }).eq('id', currentUser.id);
+            alert("Friend added!");
+            loadFriends(newList);
         }
 
-        // --- SETTINGS LOGIC ---
+        async function loadFriends(friendString) {
+            if (!friendString) return;
+            const ids = friendString.split(',');
+            const { data: friends } = await supabase.from('profiles').select('id, username').in('id', ids);
+            const select = document.getElementById('friend-list-select');
+            select.innerHTML = '<option>Select a friend</option>';
+            friends.forEach(f => {
+                let opt = document.createElement('option');
+                opt.value = f.id;
+                opt.innerText = f.username;
+                select.appendChild(opt);
+            });
+        }
+
+        async function sendDM() {
+            const receiver_id = document.getElementById('friend-list-select').value;
+            const content = document.getElementById('chat-input').value;
+            if (!receiver_id || !content) return;
+
+            await supabase.from('messages').insert([
+                { sender_id: currentUser.id, receiver_id, content }
+            ]);
+            document.getElementById('chat-input').value = "";
+            loadMessages();
+        }
+
+        async function loadMessages() {
+            const receiver_id = document.getElementById('friend-list-select').value;
+            if (!receiver_id) return;
+
+            const { data: msgs } = await supabase.from('messages')
+                .select('*')
+                .or(`and(sender_id.eq.${currentUser.id},receiver_id.eq.${receiver_id}),and(sender_id.eq.${receiver_id},receiver_id.eq.${currentUser.id})`)
+                .order('created_at', { ascending: true });
+
+            const box = document.getElementById('chat-box');
+            box.innerHTML = msgs.map(m => `<div class="msg"><b>${m.sender_id === currentUser.id ? 'Me' : 'Them'}:</b> ${m.content}</div>`).join('');
+            box.scrollTop = box.scrollHeight;
+        }
+
+        // Auto-refresh chat every 3 seconds
+        setInterval(() => { if(currentUser) loadMessages(); }, 3000);
+
+        // --- THEME & CLOAK LOGIC ---
         function updateTheme(theme) {
             document.body.setAttribute('data-theme', theme);
             localStorage.setItem('chicken-theme', theme);
@@ -194,9 +254,9 @@
         }
 
         window.onload = () => {
+            checkUser();
             const savedTheme = localStorage.getItem('chicken-theme') || 'dark';
             const savedCloak = localStorage.getItem('chicken-cloak') || 'off';
-
             updateTheme(savedTheme);
             document.getElementById('theme-select').value = savedTheme;
             document.getElementById('cloak-select').value = savedCloak;
@@ -205,12 +265,7 @@
                 const url = window.location.href;
                 const win = window.open('about:blank', '_blank');
                 if (win) {
-                    win.document.body.style.margin = '0';
-                    win.document.body.style.height = '100vh';
-                    const iframe = win.document.createElement('iframe');
-                    iframe.style.border = 'none'; iframe.style.width = '100%';
-                    iframe.style.height = '100%'; iframe.src = url;
-                    win.document.body.appendChild(iframe);
+                    win.document.body.innerHTML = `<iframe style="border:none;width:100%;height:100vh;" src="${url}"></iframe>`;
                     window.location.replace('https://google.com');
                 }
             }
