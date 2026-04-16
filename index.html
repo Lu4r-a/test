@@ -77,6 +77,25 @@
             width: 100%;
         }
 
+        /* Favorite Button Styling */
+        .fav-btn {
+            background: rgba(0, 0, 0, 0.4);
+            border: 1px solid var(--accent-color);
+            color: var(--accent-color);
+            cursor: pointer;
+            padding: 5px 10px;
+            border-radius: 5px;
+            margin-top: 10px;
+            font-size: 0.8rem;
+            transition: 0.2s;
+            display: inline-block;
+        }
+
+        .fav-btn.is-fav {
+            background: var(--accent-color);
+            color: #000;
+        }
+
         /* Settings Overlay */
         #settings-panel {
             position: fixed;
@@ -179,6 +198,59 @@
             container: '#games',
             theme: 'dark'
         });
+
+        // --- FAVORITE SYSTEM LOGIC ---
+        let favorites = JSON.parse(localStorage.getItem('chicken-favs')) || [];
+
+        function toggleFavorite(gameId) {
+            const index = favorites.indexOf(gameId);
+            if (index > -1) {
+                favorites.splice(index, 1);
+            } else {
+                favorites.push(gameId);
+            }
+            localStorage.setItem('chicken-favs', JSON.stringify(favorites));
+            updateFavUI();
+        }
+
+        function updateFavUI() {
+            document.querySelectorAll('.fav-btn').forEach(btn => {
+                const id = btn.getAttribute('data-id');
+                if (favorites.includes(id)) {
+                    btn.classList.add('is-fav');
+                    btn.innerHTML = '★ Favorited';
+                } else {
+                    btn.classList.remove('is-fav');
+                    btn.innerHTML = '☆ Favorite';
+                }
+            });
+        }
+
+        // Wait for Lumin to populate the #games container
+        const detectGames = setInterval(() => {
+            // Find all direct children of #games (the game cards)
+            const gameCards = document.querySelectorAll('#games > div');
+            if (gameCards.length > 0) {
+                gameCards.forEach((card, index) => {
+                    // Only add button if it doesn't exist yet
+                    if (!card.querySelector('.fav-btn')) {
+                        const gameId = 'game-' + index; // Identifier for storage
+                        const btn = document.createElement('button');
+                        btn.className = 'fav-btn';
+                        btn.setAttribute('data-id', gameId);
+                        btn.innerHTML = '☆ Favorite';
+                        btn.onclick = (e) => {
+                            e.stopPropagation(); // Prevents clicking the game while favoriting
+                            toggleFavorite(gameId);
+                        };
+                        card.appendChild(btn);
+                    }
+                });
+                updateFavUI();
+                clearInterval(detectGames);
+            }
+        }, 500);
+        // ------------------------------
 
         // Settings Logic
         const panel = document.getElementById('settings-panel');
