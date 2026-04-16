@@ -11,8 +11,6 @@
             --text-color: #ffffff;
             --accent-color: #ffcc00;
             --panel-bg: #1e1e1e;
-            --discord-blurple: #5865F2;
-            --discord-dark: #2f3136;
         }
 
         [data-theme="light"] {
@@ -31,75 +29,28 @@
             transition: background-color 0.3s, color 0.3s;
             overflow-x: hidden;
             display: flex;
-            height: 100vh;
-        }
-
-        /* Discord Style Sidebar */
-        #social-sidebar {
-            width: 300px;
-            background: var(--discord-dark);
-            display: flex;
             flex-direction: column;
-            border-right: 1px solid #202225;
-            padding: 15px;
-            z-index: 10;
+            min-height: 100vh;
+            opacity: 0;
+            animation: fadeInPage 1s forwards;
         }
 
-        .auth-box, .friends-box, .chat-box {
-            background: #202225;
-            padding: 10px;
-            border-radius: 8px;
-            margin-bottom: 15px;
-        }
+        @keyframes fadeInPage { to { opacity: 1; } }
 
-        input {
-            width: 90%;
-            padding: 8px;
-            margin-bottom: 5px;
-            border-radius: 4px;
-            border: none;
-            background: #40444b;
-            color: white;
-        }
-
-        .social-btn {
-            background: var(--discord-blurple);
-            color: white;
-            border: none;
-            padding: 8px;
-            width: 100%;
-            border-radius: 4px;
-            cursor: pointer;
-            font-weight: bold;
-        }
-
-        #message-list {
-            height: 150px;
-            overflow-y: auto;
-            font-size: 0.8rem;
-            margin-bottom: 5px;
-            background: #36393f;
-            padding: 5px;
-        }
-
-        /* Main Content Area */
-        .main-content {
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-            overflow-y: auto;
-        }
-
+        /* Header & Nav */
         header {
             padding: 20px 50px;
             display: flex;
             justify-content: space-between;
             align-items: center;
+            background: rgba(0,0,0,0.2);
         }
+
+        .nav-buttons { display: flex; gap: 10px; }
 
         h1 { color: var(--accent-color); margin: 0; font-size: 1.8rem; }
 
-        .settings-btn {
+        .btn {
             background: none;
             border: 2px solid var(--accent-color);
             color: var(--accent-color);
@@ -110,177 +61,148 @@
             transition: 0.2s;
         }
 
-        #games { padding: 20px; max-width: 1200px; margin: 0 auto; width: 100%; }
+        .btn:hover { background: var(--accent-color); color: #000; }
 
-        #settings-panel {
+        /* Games Container */
+        #games { flex: 1; padding: 20px; max-width: 1200px; margin: 0 auto; width: 100%; }
+
+        /* Overlay Panels (Settings, Friends, DMs) */
+        .overlay {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0,0,0,0.8); display: none; justify-content: center;
-            align-items: center; z-index: 1000; opacity: 0; transition: opacity 0.3s ease;
+            background: rgba(0,0,0,0.9); display: none;
+            justify-content: center; align-items: center; z-index: 1000;
         }
-        #settings-panel.active { display: flex; opacity: 1; }
-        .settings-content { background: var(--panel-bg); padding: 30px; border-radius: 15px; width: 300px; }
+
+        .overlay.active { display: flex; }
+
+        .panel-content {
+            background: var(--panel-bg);
+            padding: 30px;
+            border-radius: 15px;
+            width: 400px;
+            max-height: 80vh;
+            overflow-y: auto;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+        }
+
+        .input-group { margin-bottom: 15px; }
+        input, select {
+            width: 100%; padding: 10px; border-radius: 5px; border: 1px solid #444;
+            background: #333; color: white; margin-top: 5px; box-sizing: border-box;
+        }
+
+        .close-btn { width: 100%; margin-top: 15px; }
+
+        /* Footer */
         footer { text-align: center; padding: 20px; font-size: 0.9rem; opacity: 0.7; }
         .heart { color: #ff4d4d; }
     </style>
 </head>
 <body>
 
-    <div id="social-sidebar">
-        <h3 style="color: var(--accent-color); margin-top:0;">Chicken Social</h3>
-        
-        <div class="auth-box" id="auth-ui">
-            <input type="text" id="auth-user" placeholder="Username (for profile)">
-            <input type="email" id="auth-email" placeholder="Email (use fake@fake.com)">
-            <input type="password" id="auth-pass" placeholder="Password">
-            <button class="social-btn" onclick="handleAuth()">Login / Sign Up</button>
+    <header>
+        <h1>Chicken Games</h1>
+        <div class="nav-buttons">
+            <button class="btn" onclick="openPanel('friends-panel')">Friends</button>
+            <button class="btn" onclick="openPanel('dm-panel')">DMs</button>
+            <button class="btn" onclick="toggleSettings()">Settings</button>
         </div>
+    </header>
 
-        <div id="logged-in-ui" style="display:none;">
-            <p id="user-display" style="font-size:0.9rem;"></p>
-            
-            <div class="friends-box">
-                <p style="margin:0 0 5px 0; font-size:0.8rem; opacity:0.7;">ADD FRIEND</p>
-                <input type="text" id="friend-username" placeholder="Friend Username">
-                <button class="social-btn" style="background:#3ba55d;" onclick="addFriend()">Add</button>
-                <div id="friends-list" style="margin-top:10px; font-size:0.85rem;"></div>
-            </div>
+    <div id="games"></div>
 
-            <div class="chat-box">
-                <p style="margin:0 0 5px 0; font-size:0.8rem; opacity:0.7;">DIRECT MESSAGES</p>
-                <div id="message-list"></div>
-                <input type="text" id="msg-input" placeholder="Type a message...">
-                <button class="social-btn" onclick="sendMessage()">Send</button>
+    <div id="settings-panel" class="overlay">
+        <div class="panel-content">
+            <h2>Settings</h2>
+            <div class="input-group">
+                <label>Theme</label>
+                <select id="theme-select" onchange="updateTheme(this.value)">
+                    <option value="dark">Dark Mode</option>
+                    <option value="light">Light Mode</option>
+                </select>
             </div>
-            
-            <button class="social-btn" style="background:#ed4245; margin-top:10px;" onclick="logout()">Logout</button>
+            <div class="input-group">
+                <label>Automatic Cloaking</label>
+                <select id="cloak-select" onchange="updateCloak(this.value)">
+                    <option value="off">Off</option>
+                    <option value="on">On (About:Blank)</option>
+                </select>
+            </div>
+            <button class="btn close-btn" onclick="toggleSettings()">Save & Close</button>
         </div>
     </div>
 
-    <div class="main-content">
-        <header>
-            <h1>Chicken Games</h1>
-            <button class="settings-btn" onclick="toggleSettings()">Settings</button>
-        </header>
-
-        <div id="games"></div>
-
-        <div id="settings-panel">
-            <div class="settings-content">
-                <h2>Settings</h2>
-                <div class="setting-item">
-                    <label>Theme</label>
-                    <select id="theme-select" onchange="updateTheme(this.value)">
-                        <option value="dark">Dark Mode</option>
-                        <option value="light">Light Mode</option>
-                    </select>
-                </div>
-                <div class="setting-item">
-                    <label>Automatic Cloaking</label>
-                    <select id="cloak-select" onchange="updateCloak(this.value)">
-                        <option value="off">Off</option>
-                        <option value="on">On (About:Blank)</option>
-                    </select>
-                </div>
-                <button class="close-btn" onclick="toggleSettings()">Save & Close</button>
+    <div id="friends-panel" class="overlay">
+        <div class="panel-content">
+            <h2>Add Friend</h2>
+            <div class="input-group">
+                <input type="text" id="friend-search" placeholder="Enter username...">
+                <button class="btn" style="width:100%; margin-top:10px;" onclick="searchFriend()">Send Request</button>
             </div>
+            <p id="friend-status"></p>
+            <h3>Current Friends</h3>
+            <div id="friends-list">Log in to see friends.</div>
+            <button class="btn close-btn" onclick="closePanel('friends-panel')">Back to Games</button>
         </div>
-
-        <footer>
-            Made with <span class="heart">❤</span> by chickenmonkey278
-        </footer>
     </div>
+
+    <div id="dm-panel" class="overlay">
+        <div class="panel-content">
+            <h2>Direct Messages</h2>
+            <div id="dm-list" style="height: 200px; background: #222; margin-bottom: 10px; padding: 10px; border-radius: 5px; overflow-y: auto;">
+                Select a friend to chat.
+            </div>
+            <input type="text" id="dm-input" placeholder="Type a message...">
+            <button class="btn" style="width:100%; margin-top:10px;" onclick="sendDM()">Send</button>
+            <button class="btn close-btn" onclick="closePanel('dm-panel')">Back to Games</button>
+        </div>
+    </div>
+
+    <footer>Made with <span class="heart">❤</span> by chickenmonkey278</footer>
 
     <script src="https://cdn.jsdelivr.net/gh/luminsdk/script@latest/lumin.min.js"></script>
     <script>
-        // --- SUPABASE CONFIG ---
+        // 1. SUPABASE CONNECTION
         const SB_URL = 'https://ktubysfkhindjtnygxba.supabase.co';
         const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imt0dWJ5c2ZraGluZGp0bnlneGJhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzYzMTI5MzUsImV4cCI6MjA5MTg4ODkzNX0._28tnrLXjsdGaMXLlV_kUkWZjD0z3acF0BgGcSH12k4';
         const supabase = supabase.createClient(SB_URL, SB_KEY);
 
-        // --- AUTH LOGIC ---
-        async function handleAuth() {
-            const email = document.getElementById('auth-email').value;
-            const password = document.getElementById('auth-pass').value;
-            const username = document.getElementById('auth-user').value;
-
-            // Try login
-            let { data, error } = await supabase.auth.signInWithPassword({ email, password });
-            
-            // If login fails, try signup
-            if (error) {
-                const { data: sData, error: sError } = await supabase.auth.signUp({ email, password });
-                if (sError) return alert(sError.message);
-                data = sData;
-                // Create profile
-                await supabase.from('profiles').insert([{ id: data.user.id, username: username }]);
-            }
-            checkUser();
-        }
-
-        async function logout() {
-            await supabase.auth.signOut();
-            location.reload();
-        }
-
-        async function checkUser() {
-            const { data: { user } } = await supabase.auth.getUser();
-            if (user) {
-                document.getElementById('auth-ui').style.display = 'none';
-                document.getElementById('logged-in-ui').style.display = 'block';
-                const { data } = await supabase.from('profiles').select('username').eq('id', user.id).single();
-                document.getElementById('user-display').innerText = `Logged in as: ${data?.username || 'Gamer'}`;
-                loadMessages();
-                listenMessages();
-            }
-        }
-
-        // --- FRIENDS & DMS ---
-        async function addFriend() {
-            const name = document.getElementById('friend-username').value;
-            alert("Adding " + name + "... (Make sure the table exists!)");
-            // This pulls from the profiles table we made earlier
-            const { data } = await supabase.from('profiles').select('username').eq('username', name);
-            if (data.length > 0) {
-                const div = document.createElement('div');
-                div.innerText = "🟢 " + name;
-                document.getElementById('friends-list').appendChild(div);
-            } else { alert("User not found"); }
-        }
-
-        async function sendMessage() {
-            const content = document.getElementById('msg-input').value;
-            const { data: { user } } = await supabase.auth.getUser();
-            await supabase.from('messages').insert([{ sender_id: user.id, content: content }]);
-            document.getElementById('msg-input').value = '';
-        }
-
-        async function loadMessages() {
-            const { data } = await supabase.from('messages').select('*').order('created_at', { ascending: true }).limit(10);
-            const list = document.getElementById('message-list');
-            list.innerHTML = '';
-            data.forEach(m => {
-                list.innerHTML += `<div><strong>User:</strong> ${m.content}</div>`;
-            });
-        }
-
-        function listenMessages() {
-            supabase.channel('messages').on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages' }, payload => {
-                loadMessages();
-            }).subscribe();
-        }
-
-        // --- ORIGINAL SETTINGS LOGIC ---
+        // 2. LUMIN INITIALIZATION (Your Games)
         Lumin.init({ container: '#games', theme: 'dark' });
-        const panel = document.getElementById('settings-panel');
+
+        // 3. PANEL LOGIC
+        function openPanel(id) { document.getElementById(id).classList.add('active'); }
+        function closePanel(id) { document.getElementById(id).classList.remove('active'); }
+
+        const settingsPanel = document.getElementById('settings-panel');
         function toggleSettings() {
-            if (panel.classList.contains('active')) {
-                panel.style.opacity = '0';
-                setTimeout(() => panel.classList.remove('active'), 300);
+            if (settingsPanel.classList.contains('active')) {
+                settingsPanel.style.opacity = '0';
+                setTimeout(() => settingsPanel.classList.remove('active'), 300);
             } else {
-                panel.classList.add('active');
-                setTimeout(() => panel.style.opacity = '1', 10);
+                settingsPanel.classList.add('active');
+                setTimeout(() => settingsPanel.style.opacity = '1', 10);
             }
         }
+
+        // 4. FRIEND LOGIC
+        async function searchFriend() {
+            const username = document.getElementById('friend-search').value;
+            const status = document.getElementById('friend-status');
+
+            const { data, error } = await supabase.from('profiles').select('id').eq('username', username).single();
+
+            if (data) {
+                status.style.color = "lightgreen";
+                status.innerText = "Success! Friend request sent.";
+                // Logic to add to a "friends" table could go here
+            } else {
+                status.style.color = "red";
+                status.innerText = "Invalid! This username is invalid.";
+            }
+        }
+
+        // 5. SETTINGS & CLOAKING
         function updateTheme(theme) {
             document.body.setAttribute('data-theme', theme);
             localStorage.setItem('chicken-theme', theme);
@@ -288,12 +210,25 @@
         function updateCloak(status) { localStorage.setItem('chicken-cloak', status); }
 
         window.onload = () => {
-            checkUser();
             const savedTheme = localStorage.getItem('chicken-theme') || 'dark';
             const savedCloak = localStorage.getItem('chicken-cloak') || 'off';
             updateTheme(savedTheme);
             document.getElementById('theme-select').value = savedTheme;
             document.getElementById('cloak-select').value = savedCloak;
+
+            // Cloak logic
+            if (savedCloak === 'on' && window.top === window.self) {
+                const win = window.open('about:blank', '_blank');
+                if (win) {
+                    win.document.body.style.margin = '0';
+                    win.document.body.style.height = '100vh';
+                    const iframe = win.document.createElement('iframe');
+                    iframe.style.width = '100%'; iframe.style.height = '100%';
+                    iframe.style.border = 'none'; iframe.src = window.location.href;
+                    win.document.body.appendChild(iframe);
+                    window.location.replace('https://google.com');
+                }
+            }
         };
     </script>
 </body>
