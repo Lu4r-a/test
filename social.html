@@ -119,7 +119,7 @@
         // SUPABASE CONFIG
         const SB_URL = "https://ktubysfkhindjtnygxba.supabase.co";
         const SB_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imt0dWJ5c2ZraGluZGp0bnlneGJhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzYzMTI5MzUsImV4cCI6MjA5MTg4ODkzNX0._28tnrLXjsdGaMXLlV_kUkWZjD0z3acF0BgGcSH12k4";
-        const supabase = supabase.createClient(SB_URL, SB_KEY);
+        const supabaseClient = window.supabase.createClient(SB_URL, SB_KEY);
 
         // Simple Session Mockup (In a real app, use Supabase Auth)
         let myId = localStorage.getItem('chicken-user-id') || crypto.randomUUID();
