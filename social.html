@@ -1,108 +1,122 @@
-<script>
-    const SB_URL = "https://ktubysfkhindjtnygxba.supabase.co";
-    const SB_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imt0dWJ5c2ZraGluZGp0bnlneGJhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzYzMTI5MzUsImV4cCI6MjA5MTg4ODkzNX0._28tnrLXjsdGaMXLlV_kUkWZjD0z3acF0BgGcSH12k4";
-    const chickenDB = supabase.createClient(SB_URL, SB_KEY);
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chicken Social - Fixed</title>
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    <style>
+        :root { --bg-color: #121212; --text-color: #ffffff; --accent-color: #ffcc00; --panel-bg: #1e1e1e; }
+        body { margin: 0; font-family: sans-serif; background-color: var(--bg-color); color: var(--text-color); display: flex; flex-direction: column; align-items: center; padding: 20px; }
+        .nav-bar { width: 100%; max-width: 600px; display: flex; gap: 10px; margin-bottom: 20px; }
+        .btn { background: none; border: 2px solid var(--accent-color); color: var(--accent-color); padding: 10px; cursor: pointer; border-radius: 5px; font-weight: bold; text-decoration: none; }
+        .btn:hover, .btn.active { background: var(--accent-color); color: #000; }
+        .container { width: 100%; max-width: 600px; background: var(--panel-bg); padding: 20px; border-radius: 15px; }
+        .hidden { display: none !important; }
+        input { width: 80%; padding: 10px; margin: 10px 0; background: #333; border: 1px solid #444; color: white; border-radius: 5px; }
+        #message-display { height: 250px; overflow-y: auto; background: #111; padding: 10px; margin-bottom: 10px; border-radius: 5px; display: flex; flex-direction: column; }
+    </style>
+</head>
+<body>
 
-    let myId = localStorage.getItem('chicken-id') || crypto.randomUUID();
-    let myUsername = localStorage.getItem('chicken-username');
-    let currentChatPartner = null;
+    <div id="login-screen" class="container">
+        <h1>Chicken Social</h1>
+        <input type="text" id="username-input" placeholder="Enter Username...">
+        <button class="btn" onclick="login()">Enter Chat</button>
+    </div>
 
-    // --- STATUS SYSTEM ---
-    async function updateMyStatus(status) {
-        if (!myUsername) return;
-        await chickenDB.from('profiles').upsert({ 
-            id: myId, 
-            username: myUsername, 
-            last_seen: new Date().toISOString(),
-            status: status 
-        });
-    }
+    <div id="main-content" class="hidden">
+        <div class="nav-bar">
+            <a href="index.html" class="btn">← Back</a>
+            <button class="btn active" id="btn-friends" onclick="showTab('friends')">Users</button>
+            <button class="btn" id="btn-dms" onclick="showTab('dms')">DMs</button>
+        </div>
 
-    // Update status every 30 seconds
-    setInterval(() => updateMyStatus('Online'), 30000);
-    // Detect Idle
-    window.onblur = () => updateMyStatus('Idle');
-    window.onfocus = () => updateMyStatus('Online');
+        <div id="friends-tab" class="container">
+            <h3>Online Users</h3>
+            <div id="friends-list">Loading...</div>
+        </div>
 
-    async function loadUsers() {
-        const list = document.getElementById('friends-list');
-        const { data } = await chickenDB.from('profiles').select('*');
-        
-        list.innerHTML = "";
-        data.forEach(user => {
-            if(user.id !== myId) {
-                // Determine color
-                let color = "red"; let text = "Offline";
-                const lastSeen = new Date(user.last_seen);
-                const now = new Date();
-                
-                // If seen in last 2 minutes
-                if ((now - lastSeen) < 120000) {
-                    if (user.status === 'Idle') { color = "yellow"; text = "Idle"; }
-                    else { color = "green"; text = "Online"; }
+        <div id="dms-tab" class="container hidden">
+            <h3 id="chat-header">Select a user</h3>
+            <div id="message-display"></div>
+            <input type="text" id="msg-input" placeholder="Type a message...">
+            <button class="btn" onclick="sendMessage()">Send</button>
+        </div>
+    </div>
+
+    <script>
+        const SB_URL = "https://ktubysfkhindjtnygxba.supabase.co";
+        const SB_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imt0dWJ5c2ZraGluZGp0bnlneGJhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzYzMTI5MzUsImV4cCI6MjA5MTg4ODkzNX0._28tnrLXjsdGaMXLlV_kUkWZjD0z3acF0BgGcSH12k4";
+        const sb = supabase.createClient(SB_URL, SB_KEY);
+
+        let myId = localStorage.getItem('chicken-id') || "User-" + Math.floor(Math.random() * 9000);
+        let myUsername = localStorage.getItem('chicken-username');
+        let currentPartner = null;
+
+        async function login() {
+            const name = document.getElementById('username-input').value;
+            if (name.length < 2) return alert("Name too short");
+            
+            localStorage.setItem('chicken-id', myId);
+            localStorage.setItem('chicken-username', name);
+            myUsername = name;
+
+            await sb.from('profiles').upsert({ id: myId, username: name });
+            location.reload(); 
+        }
+
+        function showTab(tab) {
+            document.getElementById('friends-tab').classList.toggle('hidden', tab !== 'friends');
+            document.getElementById('dms-tab').classList.toggle('hidden', tab !== 'dms');
+        }
+
+        async function loadUsers() {
+            const { data } = await sb.from('profiles').select('*');
+            const list = document.getElementById('friends-list');
+            list.innerHTML = "";
+            data.forEach(u => {
+                if (u.id !== myId) {
+                    list.innerHTML += `<div style="margin:10px 0;">${u.username} <button class="btn" onclick="startChat('${u.id}', '${u.username}')">Chat</button></div>`;
                 }
+            });
+        }
 
-                list.innerHTML += `
-                    <div class="user-card">
-                        <span>
-                            <span style="height:10px; width:10px; background:${color}; border-radius:50%; display:inline-block; margin-right:5px;"></span>
-                            ${user.username} <small style="color:gray;">(${text})</small>
-                        </span>
-                        <button class="btn" onclick="startChat('${user.id}', '${user.username}')">Message</button>
-                    </div>`;
+        function startChat(id, name) {
+            currentPartner = id;
+            document.getElementById('chat-header').innerText = "Chat with " + name;
+            showTab('dms');
+            loadMessages();
+        }
+
+        async function sendMessage() {
+            const content = document.getElementById('msg-input').value;
+            if (!content || !currentPartner) return;
+            
+            await sb.from('messages').insert([{ sender_id: myId, receiver_id: currentPartner, content: content }]);
+            document.getElementById('msg-input').value = "";
+            loadMessages();
+        }
+
+        async function loadMessages() {
+            if (!currentPartner) return;
+            const { data } = await sb.from('messages').select('*').or(`sender_id.eq.${myId},receiver_id.eq.${myId}`).order('created_at', { ascending: true });
+            
+            const display = document.getElementById('message-display');
+            display.innerHTML = data.filter(m => (m.sender_id === currentPartner && m.receiver_id === myId) || (m.sender_id === myId && m.receiver_id === currentPartner))
+                .map(m => `<div style="text-align:${m.sender_id === myId ? 'right' : 'left'}; margin:5px;"><span style="background:${m.sender_id === myId ? '#ffcc00' : '#333'}; color:${m.sender_id === myId ? 'black' : 'white'}; padding:5px 10px; border-radius:10px;">${m.content}</span></div>`).join('');
+            display.scrollTop = display.scrollHeight;
+        }
+
+        window.onload = () => {
+            if (myUsername) {
+                document.getElementById('login-screen').classList.add('hidden');
+                document.getElementById('main-content').classList.remove('hidden');
+                loadUsers();
+                // Refresh messages every 3 seconds
+                setInterval(loadMessages, 3000);
             }
-        });
-    }
-
-    // --- MESSAGE SYSTEM FIX ---
-    async function sendMessage() {
-        const input = document.getElementById('msg-input');
-        const content = input.value.trim();
-        if(!content || !currentChatPartner) return;
-
-        const { error } = await chickenDB.from('messages').insert([{ 
-            sender_id: myId, 
-            receiver_id: currentChatPartner, 
-            content: content 
-        }]);
-
-        if(error) alert("Error: " + error.message);
-        else {
-            input.value = "";
-            loadMessages(); // Show the message immediately
-        }
-    }
-
-    async function loadMessages() {
-        if(!currentChatPartner) return;
-        const { data } = await chickenDB.from('messages')
-            .select('*')
-            .or(`and(sender_id.eq.${myId},receiver_id.eq.${currentChatPartner}),and(sender_id.eq.${currentChatPartner},receiver_id.eq.${myId})`)
-            .order('created_at', { ascending: true });
-
-        const display = document.getElementById('message-display');
-        display.innerHTML = data.map(m => `
-            <div style="text-align: ${m.sender_id === myId ? 'right' : 'left'}; margin: 5px;">
-                <span style="background: ${m.sender_id === myId ? '#ffcc00' : '#444'}; color: ${m.sender_id === myId ? 'black' : 'white'}; padding: 5px 10px; border-radius: 10px; display: inline-block;">
-                    ${m.content}
-                </span>
-            </div>
-        `).join('');
-        display.scrollTop = display.scrollHeight;
-    }
-
-    // Real-time listener for the chat
-    chickenDB.channel('chat').on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages' }, () => {
-        loadMessages();
-    }).subscribe();
-
-    window.onload = () => {
-        if(myUsername) {
-            document.getElementById('login-overlay').classList.add('hidden');
-            document.getElementById('main-content').classList.remove('hidden');
-            updateMyStatus('Online');
-            loadUsers();
-            setInterval(loadUsers, 5000); // Refresh list for dots
-        }
-    };
-</script>
+        };
+    </script>
+</body>
+</html>
