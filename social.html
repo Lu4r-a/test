@@ -3,45 +3,62 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Chicken Social - Fixed</title>
+    <title>Chicken Social - Pro</title>
     <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
     <style>
         :root { --bg-color: #121212; --text-color: #ffffff; --accent-color: #ffcc00; --panel-bg: #1e1e1e; }
-        body { margin: 0; font-family: sans-serif; background-color: var(--bg-color); color: var(--text-color); display: flex; flex-direction: column; align-items: center; padding: 20px; }
-        .nav-bar { width: 100%; max-width: 600px; display: flex; gap: 10px; margin-bottom: 20px; }
-        .btn { background: none; border: 2px solid var(--accent-color); color: var(--accent-color); padding: 10px; cursor: pointer; border-radius: 5px; font-weight: bold; text-decoration: none; }
+        body { margin: 0; font-family: 'Segoe UI', sans-serif; background-color: var(--bg-color); color: var(--text-color); display: flex; flex-direction: column; align-items: center; padding: 20px; }
+        
+        /* Fixed Size: Now it uses more of your screen! */
+        .container { width: 95%; max-width: 900px; background: var(--panel-bg); padding: 25px; border-radius: 15px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
+        
+        .nav-bar { width: 95%; max-width: 900px; display: flex; gap: 10px; margin-bottom: 20px; }
+        .btn { background: none; border: 2px solid var(--accent-color); color: var(--accent-color); padding: 10px 20px; cursor: pointer; border-radius: 5px; font-weight: bold; text-decoration: none; transition: 0.2s; }
         .btn:hover, .btn.active { background: var(--accent-color); color: #000; }
-        .container { width: 100%; max-width: 600px; background: var(--panel-bg); padding: 20px; border-radius: 15px; }
+        
         .hidden { display: none !important; }
-        input { width: 80%; padding: 10px; margin: 10px 0; background: #333; border: 1px solid #444; color: white; border-radius: 5px; }
-        #message-display { height: 250px; overflow-y: auto; background: #111; padding: 10px; margin-bottom: 10px; border-radius: 5px; display: flex; flex-direction: column; }
+        
+        /* Message Box: Bigger and better */
+        #message-display { height: 450px; overflow-y: auto; background: #111; padding: 15px; margin-bottom: 15px; border-radius: 8px; border: 1px solid #333; }
+        input { width: calc(100% - 24px); padding: 12px; margin: 10px 0; background: #333; border: 1px solid #444; color: white; border-radius: 5px; font-size: 16px; }
+
+        /* Status Dots */
+        .dot { height: 12px; width: 12px; border-radius: 50%; display: inline-block; margin-right: 8px; }
+        .online { background: #00ff00; box-shadow: 0 0 8px #00ff00; }
+        .idle { background: #ffcc00; }
+        .offline { background: #ff4d4d; }
+        
+        .user-row { display: flex; justify-content: space-between; align-items: center; padding: 15px; background: #252525; border-radius: 8px; margin-bottom: 10px; }
     </style>
 </head>
 <body>
 
-    <div id="login-screen" class="container">
-        <h1>Chicken Social</h1>
-        <input type="text" id="username-input" placeholder="Enter Username...">
-        <button class="btn" onclick="login()">Enter Chat</button>
+    <div id="login-screen" class="container" style="text-align: center; max-width: 400px;">
+        <h1 style="color: var(--accent-color);">Chicken Social</h1>
+        <p>Pick a name to start chatting</p>
+        <input type="text" id="username-input" placeholder="Username...">
+        <button class="btn" style="width: 100%;" onclick="login()">Join Chat</button>
     </div>
 
-    <div id="main-content" class="hidden">
+    <div id="main-content" class="hidden" style="width: 100%; display: flex; flex-direction: column; align-items: center;">
         <div class="nav-bar">
-            <a href="index.html" class="btn">← Back</a>
-            <button class="btn active" id="btn-friends" onclick="showTab('friends')">Users</button>
-            <button class="btn" id="btn-dms" onclick="showTab('dms')">DMs</button>
+            <a href="index.html" class="btn">← Back to Games</a>
+            <button class="btn active" id="btn-friends" onclick="showTab('friends')">Online Users</button>
+            <button class="btn" id="btn-dms" onclick="showTab('dms')">Direct Messages</button>
         </div>
 
         <div id="friends-tab" class="container">
-            <h3>Online Users</h3>
-            <div id="friends-list">Loading...</div>
+            <h2 style="margin-top:0;">Global Users</h2>
+            <div id="friends-list">Searching for players...</div>
         </div>
 
         <div id="dms-tab" class="container hidden">
-            <h3 id="chat-header">Select a user</h3>
+            <h2 id="chat-header" style="margin-top:0;">Select a user</h2>
             <div id="message-display"></div>
-            <input type="text" id="msg-input" placeholder="Type a message...">
-            <button class="btn" onclick="sendMessage()">Send</button>
+            <div style="display: flex; gap: 10px;">
+                <input type="text" id="msg-input" placeholder="Type a message..." style="flex: 1;">
+                <button class="btn" onclick="sendMessage()" style="margin-top:10px; height: 45px;">Send</button>
+            </div>
         </div>
     </div>
 
@@ -50,61 +67,77 @@
         const SB_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imt0dWJ5c2ZraGluZGp0bnlneGJhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzYzMTI5MzUsImV4cCI6MjA5MTg4ODkzNX0._28tnrLXjsdGaMXLlV_kUkWZjD0z3acF0BgGcSH12k4";
         const sb = supabase.createClient(SB_URL, SB_KEY);
 
-        let myId = localStorage.getItem('chicken-id') || "User-" + Math.floor(Math.random() * 9000);
+        let myId = localStorage.getItem('chicken-id') || "User-" + Math.floor(Math.random() * 9999);
         let myUsername = localStorage.getItem('chicken-username');
         let currentPartner = null;
 
         async function login() {
-            const name = document.getElementById('username-input').value;
-            if (name.length < 2) return alert("Name too short");
-            
+            const name = document.getElementById('username-input').value.trim();
+            if (name.length < 2) return alert("Name too short!");
             localStorage.setItem('chicken-id', myId);
             localStorage.setItem('chicken-username', name);
-            myUsername = name;
-
-            await sb.from('profiles').upsert({ id: myId, username: name });
+            await sb.from('profiles').upsert({ id: myId, username: name, last_seen: new Date().toISOString(), status: 'online' });
             location.reload(); 
+        }
+
+        // Heartbeat: Tells the database you are still there
+        async function heartbeat() {
+            if (!myUsername) return;
+            const status = document.hasFocus() ? 'online' : 'idle';
+            await sb.from('profiles').update({ last_seen: new Date().toISOString(), status: status }).eq('id', myId);
         }
 
         function showTab(tab) {
             document.getElementById('friends-tab').classList.toggle('hidden', tab !== 'friends');
             document.getElementById('dms-tab').classList.toggle('hidden', tab !== 'dms');
+            document.getElementById('btn-friends').classList.toggle('active', tab === 'friends');
+            document.getElementById('btn-dms').classList.toggle('active', tab === 'dms');
         }
 
         async function loadUsers() {
             const { data } = await sb.from('profiles').select('*');
             const list = document.getElementById('friends-list');
             list.innerHTML = "";
+            
             data.forEach(u => {
-                if (u.id !== myId) {
-                    list.innerHTML += `<div style="margin:10px 0;">${u.username} <button class="btn" onclick="startChat('${u.id}', '${u.username}')">Chat</button></div>`;
-                }
+                if (u.id === myId) return;
+
+                // Logic for Dots
+                const lastSeen = new Date(u.last_seen);
+                const isRecent = (new Date() - lastSeen) < 60000; // Seen in last 60 seconds
+                let statusClass = 'offline';
+                if (isRecent) statusClass = u.status === 'idle' ? 'idle' : 'online';
+
+                list.innerHTML += `
+                    <div class="user-row">
+                        <span><span class="dot ${statusClass}"></span><strong>${u.username}</strong></span>
+                        <button class="btn" onclick="startChat('${u.id}', '${u.username}')">Message</button>
+                    </div>`;
             });
         }
 
         function startChat(id, name) {
             currentPartner = id;
-            document.getElementById('chat-header').innerText = "Chat with " + name;
+            document.getElementById('chat-header').innerText = "Chatting with " + name;
             showTab('dms');
             loadMessages();
         }
 
         async function sendMessage() {
-            const content = document.getElementById('msg-input').value;
+            const input = document.getElementById('msg-input');
+            const content = input.value.trim();
             if (!content || !currentPartner) return;
-            
             await sb.from('messages').insert([{ sender_id: myId, receiver_id: currentPartner, content: content }]);
-            document.getElementById('msg-input').value = "";
+            input.value = "";
             loadMessages();
         }
 
         async function loadMessages() {
             if (!currentPartner) return;
             const { data } = await sb.from('messages').select('*').or(`sender_id.eq.${myId},receiver_id.eq.${myId}`).order('created_at', { ascending: true });
-            
             const display = document.getElementById('message-display');
             display.innerHTML = data.filter(m => (m.sender_id === currentPartner && m.receiver_id === myId) || (m.sender_id === myId && m.receiver_id === currentPartner))
-                .map(m => `<div style="text-align:${m.sender_id === myId ? 'right' : 'left'}; margin:5px;"><span style="background:${m.sender_id === myId ? '#ffcc00' : '#333'}; color:${m.sender_id === myId ? 'black' : 'white'}; padding:5px 10px; border-radius:10px;">${m.content}</span></div>`).join('');
+                .map(m => `<div style="text-align:${m.sender_id === myId ? 'right' : 'left'}; margin:8px;"><span style="background:${m.sender_id === myId ? '#ffcc00' : '#333'}; color:${m.sender_id === myId ? 'black' : 'white'}; padding:8px 15px; border-radius:15px; display:inline-block; max-width:70%;">${m.content}</span></div>`).join('');
             display.scrollTop = display.scrollHeight;
         }
 
@@ -113,7 +146,8 @@
                 document.getElementById('login-screen').classList.add('hidden');
                 document.getElementById('main-content').classList.remove('hidden');
                 loadUsers();
-                // Refresh messages every 3 seconds
+                setInterval(loadUsers, 5000); // Update dots every 5 seconds
+                setInterval(heartbeat, 10000); // Tell others you're online every 10 seconds
                 setInterval(loadMessages, 3000);
             }
         };
