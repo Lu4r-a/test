@@ -274,42 +274,47 @@ style.textContent = `@keyframes slideIn { from { transform: translateX(100%); } 
 document.head.append(style);
     </script>
 <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
-
 <script>
-    // Use the same credentials from your social.html
     const INDEX_SB_URL = "https://ktubysfkhindjtnygxba.supabase.co";
     const INDEX_SB_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imt0dWJ5c2ZraGluZGp0bnlneGJhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzYzMTI5MzUsImV4cCI6MjA5MTg4ODkzNX0._28tnrLXjsdGaMXLlV_kUkWZjD0z3acF0BgGcSH12k4";
     const index_sb = supabase.createClient(INDEX_SB_URL, INDEX_SB_KEY);
 
+    // This updates the count of people on the site
     async function updateGlobalCount() {
         try {
-            // We only fetch 'last_seen' to keep it fast
-            const { data, error } = await index_sb.from('profiles').select('last_seen');
-            if (error) throw error;
-
-            const now = new Date().getTime();
+            const { data } = await index_sb.from('profiles').select('last_seen');
+            const now = new Date();
             let online = 0;
 
             data.forEach(u => {
-                const lastSeen = new Date(u.last_seen).getTime();
-                // If they were active in the last 30 seconds, count them
-                if (Math.abs(now - lastSeen) < 30000) {
-                    online++;
-                }
+                const lastSeenDate = new Date(u.last_seen);
+                const diffInSeconds = Math.abs((now - lastSeenDate) / 1000);
+                if (diffInSeconds < 40) online++;
             });
 
             const display = document.getElementById('global-online-count');
             if (display) display.innerText = online;
-            
-        } catch (err) {
-            console.error("Counter error:", err);
+        } catch (err) { console.error(err); }
+    }
+
+    // This tells others YOU are online while looking at index.html
+    async function indexHeartbeat() {
+        const savedId = localStorage.getItem('chicken-id');
+        const savedName = localStorage.getItem('chicken-username');
+        if (savedId && savedName) {
+            await index_sb.from('profiles').upsert({ 
+                id: savedId, 
+                username: savedName, 
+                last_seen: new Date().toISOString(), 
+                status: 'online' 
+            });
         }
     }
 
-    // Refresh the number every 5 seconds
     setInterval(updateGlobalCount, 5000);
-    // Run it immediately when page loads
+    setInterval(indexHeartbeat, 10000);
     updateGlobalCount();
+    indexHeartbeat();
 </script>
 </body>
 </html>
