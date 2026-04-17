@@ -225,3 +225,9 @@
     </script>
 </body>
 </html>
+<script>
+    window.onerror = function(message, source, lineno, colno, error) {
+        alert("Error Found!\n" + message + "\nLine: " + lineno);
+        return false;
+    };
+</script>
