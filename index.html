@@ -12,207 +12,179 @@
             --panel-bg: #1e1e1e;
         }
 
-        /* Themes */
-        [data-theme="light"] { --bg-color: #f0f0f0; --text-color: #121212; --accent-color: #e6b800; --panel-bg: #ffffff; }
-        [data-theme="midnight"] { --bg-color: #0a0e1a; --text-color: #d1d1d1; --accent-color: #4d94ff; --panel-bg: #151b2d; }
-        [data-theme="forest"] { --bg-color: #0d1a0d; --text-color: #e0e0e0; --accent-color: #4CAF50; --panel-bg: #1a2e1a; }
+        [data-theme="light"] {
+            --bg-color: #f0f0f0;
+            --text-color: #121212;
+            --accent-color: #e6b800;
+            --panel-bg: #ffffff;
+        }
 
         body {
-            margin: 0; padding: 0;
+            margin: 0;
+            padding: 0;
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             background-color: var(--bg-color);
             color: var(--text-color);
             transition: background-color 0.3s, color 0.3s;
             overflow-x: hidden;
-            display: flex; flex-direction: column;
+            display: flex;
+            flex-direction: column;
             min-height: 100vh;
         }
 
-        header { padding: 20px 50px; display: flex; justify-content: space-between; align-items: center; }
-
-        .status-container { display: flex; align-items: center; gap: 10px; font-size: 0.8rem; font-weight: bold; }
-        .dot { height: 10px; width: 10px; background-color: #2ecc71; border-radius: 50%; box-shadow: 0 0 8px #2ecc71; animation: pulse 1.5s infinite; }
-
-        @keyframes pulse {
-            0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(46, 204, 113, 0.7); }
-            70% { transform: scale(1); box-shadow: 0 0 0 10px rgba(46, 204, 113, 0); }
-            100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(46, 204, 113, 0); }
+        /* Header & Nav */
+        header {
+            padding: 20px 50px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
         }
 
-        h1 { color: var(--accent-color); margin: 0; font-size: 1.8rem; }
-        .nav-right { display: flex; gap: 15px; align-items: center; }
-        .settings-btn { background: none; border: 2px solid var(--accent-color); color: var(--accent-color); padding: 8px 16px; cursor: pointer; border-radius: 5px; font-weight: bold; }
-
-        #games { flex: 1; padding: 20px; max-width: 1200px; margin: 0 auto; width: 100%; }
-
-        /* Panels */
-        #settings-panel, #login-panel {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0,0,0,0.85); display: none;
-            justify-content: center; align-items: center; z-index: 1000;
+        h1 {
+            color: var(--accent-color);
+            margin: 0;
+            font-size: 1.8rem;
         }
 
-        .panel-content {
-            background: var(--panel-bg); padding: 30px;
-            border-radius: 15px; width: 340px;
+        .nav-buttons {
+            display: flex;
+            gap: 10px;
+        }
+
+        /* Re-usable button style for both Social and Settings */
+        .btn-ui {
+            background: none;
+            border: 2px solid var(--accent-color);
+            color: var(--accent-color);
+            padding: 8px 16px;
+            cursor: pointer;
+            border-radius: 5px;
+            font-weight: bold;
+            transition: 0.2s;
+            text-decoration: none; /* For the <a> tag */
+            display: inline-block;
+        }
+
+        .btn-ui:hover {
+            background: var(--accent-color);
+            color: #000;
+        }
+
+        /* Games Container */
+        #games {
+            flex: 1;
+            padding: 20px;
+            max-width: 1200px;
+            margin: 0 auto;
+            width: 100%;
+        }
+
+        /* Settings Overlay */
+        #settings-panel {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.8);
+            display: none; /* Controlled by JS */
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        #settings-panel.active {
+            display: flex;
+            opacity: 1;
+        }
+
+        .settings-content {
+            background: var(--panel-bg);
+            padding: 30px;
+            border-radius: 15px;
+            width: 300px;
             box-shadow: 0 10px 30px rgba(0,0,0,0.5);
-            max-height: 80vh; overflow-y: auto;
         }
 
-        .setting-item { margin-bottom: 20px; text-align: left; }
-        input, select, .panel-btn { width: 100%; padding: 12px; margin-top: 5px; border-radius: 5px; border: 1px solid #444; background: #2a2a2a; color: white; box-sizing: border-box; }
-        .panel-btn { background: var(--accent-color); color: black; border: none; font-weight: bold; cursor: pointer; }
+        .setting-item { margin-bottom: 20px; }
+        .setting-item label { display: block; margin-bottom: 10px; }
 
-        /* Recent Games List Style */
-        .recent-list { list-style: none; padding: 0; margin-top: 10px; }
-        .recent-item { background: rgba(255,255,255,0.05); padding: 8px; margin-bottom: 5px; border-radius: 4px; font-size: 0.85rem; border-left: 3px solid var(--accent-color); }
+        select, button.close-btn {
+            width: 100%;
+            padding: 10px;
+            border-radius: 5px;
+            border: 1px solid #444;
+            background: #333;
+            color: white;
+            cursor: pointer;
+        }
 
         footer { text-align: center; padding: 20px; font-size: 0.9rem; opacity: 0.7; }
-    /* This makes the Social button look exactly like your Settings button */
-.nav-links {
-    display: flex;
-    gap: 10px;
-}
-
-.social-btn {
-    text-decoration: none;
-    background: none;
-    border: 2px solid var(--accent-color);
-    color: var(--accent-color);
-    padding: 8px 16px;
-    cursor: pointer;
-    border-radius: 5px;
-    font-weight: bold;
-    transition: 0.2s;
-    display: inline-block;
-}
-
-.social-btn:hover {
-    background: var(--accent-color);
-    color: #000;
-}
+        .heart { color: #ff4d4d; }
     </style>
 </head>
 <body>
 
     <header>
-    <h1>Chicken Games</h1>
-    <div class="nav-links">
-        <a href="social.html" class="social-btn">Social</a>
-        <button class="settings-btn" onclick="toggleSettings()">Settings</button>
-    </div>
-</header>
+        <h1>Chicken Games</h1>
+        <div class="nav-buttons">
+            <a href="social.html" class="btn-ui">Social</a>
+            <button class="btn-ui" onclick="toggleSettings()">Settings</button>
+        </div>
+    </header>
 
     <div id="games"></div>
 
-    <div id="login-panel" style="display: flex;">
-        <div class="panel-content">
-            <h2>Welcome</h2>
-            <input type="text" id="username-input" placeholder="Choose a Username...">
-            <button class="panel-btn" onclick="login()">Start Playing</button>
-        </div>
-    </div>
-
     <div id="settings-panel">
-        <div class="panel-content">
+        <div class="settings-content">
             <h2>Settings</h2>
+            
             <div class="setting-item">
                 <label>Theme</label>
                 <select id="theme-select" onchange="updateTheme(this.value)">
                     <option value="dark">Dark Mode</option>
                     <option value="light">Light Mode</option>
-                    <option value="midnight">Midnight Blue</option>
-                    <option value="forest">Forest Green</option>
                 </select>
             </div>
 
             <div class="setting-item">
-                <label>Recently Played</label>
-                <div id="recent-games-container">
-                    <ul class="recent-list" id="recent-list">
-                        <li class="recent-item">No games played yet</li>
-                    </ul>
-                </div>
+                <label>Automatic Cloaking</label>
+                <select id="cloak-select" onchange="updateCloak(this.value)">
+                    <option value="off">Off</option>
+                    <option value="on">On (About:Blank)</option>
+                </select>
             </div>
 
-            <div id="stats-area" style="font-size: 0.8rem; border-top: 1px solid #444; padding-top: 10px;">
-                <p>User: <span id="stat-username">---</span></p>
-                <p>Total Playtime: <span id="stat-total-time">0</span> mins</p>
-            </div>
-
-            <button class="panel-btn" onclick="togglePanel('settings-panel')">Save & Close</button>
+            <button class="close-btn" onclick="toggleSettings()">Save & Close</button>
         </div>
     </div>
 
-    <footer>Made with <span class="heart">❤</span> by chickenmonkey278</footer>
+    <footer>
+        Made with <span class="heart">❤</span> by chickenmonkey278
+    </footer>
 
     <script src="https://cdn.jsdelivr.net/gh/luminsdk/script@latest/lumin.min.js"></script>
-    <script>
-        let totalPlaytime = parseInt(localStorage.getItem('total-playtime')) || 0;
-        let sessionMinutes = 0;
-        let currentUser = localStorage.getItem('username');
-        let recentGames = JSON.parse(localStorage.getItem('recent-games')) || [];
 
-        // 1. Initialize Lumin and Hook into Game Clicks
+    <script>
+        // 1. Initialize Lumin Games SDK
         Lumin.init({
             container: '#games',
-            theme: 'dark',
-            onGameClick: function(game) {
-                // This captures the game name when you click it
-                addToRecent(game.title || game.name);
-            }
+            theme: 'dark'
         });
 
-        function addToRecent(gameName) {
-            // Remove if already exists (to move it to top)
-            recentGames = recentGames.filter(g => g !== gameName);
-            // Add to beginning
-            recentGames.unshift(gameName);
-            // Keep only top 5
-            if (recentGames.length > 5) recentGames.pop();
-            
-            localStorage.setItem('recent-games', JSON.stringify(recentGames));
-            renderRecentList();
-        }
-
-        function renderRecentList() {
-            const list = document.getElementById('recent-list');
-            if (recentGames.length === 0) {
-                list.innerHTML = '<li class="recent-item">No games played yet</li>';
-                return;
+        // 2. Settings Logic (The core fix)
+        const panel = document.getElementById('settings-panel');
+        
+        function toggleSettings() {
+            if (panel.classList.contains('active')) {
+                panel.style.opacity = '0';
+                setTimeout(() => panel.classList.remove('active'), 300);
+            } else {
+                panel.classList.add('active');
+                setTimeout(() => panel.style.opacity = '1', 10);
             }
-            list.innerHTML = recentGames.map(game => `<li class="recent-item">${game}</li>`).join('');
-        }
-
-        function login() {
-            const user = document.getElementById('username-input').value;
-            if (user.trim() !== "") {
-                currentUser = user;
-                localStorage.setItem('username', user);
-                document.getElementById('login-panel').style.display = 'none';
-                updateStatsUI();
-            }
-        }
-
-        function togglePanel(id) {
-            const el = document.getElementById(id);
-            el.style.display = (el.style.display === 'flex') ? 'none' : 'flex';
-            if (id === 'settings-panel') renderRecentList();
-        }
-
-        // Time Tracking
-        setInterval(() => {
-            if (!currentUser) return;
-            sessionMinutes++;
-            totalPlaytime++;
-            localStorage.setItem('total-playtime', totalPlaytime);
-            document.getElementById('session-time').innerText = sessionMinutes + "m";
-            updateStatsUI();
-        }, 60000);
-
-        function updateStatsUI() {
-            document.getElementById('stat-username').innerText = currentUser || "Guest";
-            document.getElementById('stat-total-time').innerText = totalPlaytime;
         }
 
         function updateTheme(theme) {
@@ -220,20 +192,36 @@
             localStorage.setItem('chicken-theme', theme);
         }
 
-        window.onload = () => {
-            if (currentUser) document.getElementById('login-panel').style.display = 'none';
+        function updateCloak(status) {
+            localStorage.setItem('chicken-cloak', status);
+        }
+
+        // 3. Page Load logic
+        window.addEventListener('load', () => {
             const savedTheme = localStorage.getItem('chicken-theme') || 'dark';
+            const savedCloak = localStorage.getItem('chicken-cloak') || 'off';
+
             updateTheme(savedTheme);
             document.getElementById('theme-select').value = savedTheme;
-            renderRecentList();
-            updateStatsUI();
-        };
+            document.getElementById('cloak-select').value = savedCloak;
 
-        // Fake Online Count
-        setInterval(() => {
-            const base = Math.floor(Math.random() * 20) + 110; 
-            document.getElementById('online-count').innerText = `${base} People Online`;
-        }, 5000);
+            // Execute About:Blank Cloak if enabled
+            if (savedCloak === 'on' && window.top === window.self) {
+                const url = window.location.href;
+                const win = window.open('about:blank', '_blank');
+                if (win) {
+                    win.document.body.style.margin = '0';
+                    win.document.body.style.height = '100vh';
+                    const iframe = win.document.createElement('iframe');
+                    iframe.style.border = 'none';
+                    iframe.style.width = '100%';
+                    iframe.style.height = '100%';
+                    iframe.src = url;
+                    win.document.body.appendChild(iframe);
+                    window.location.replace('https://google.com');
+                }
+            }
+        });
     </script>
 </body>
 </html>
