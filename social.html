@@ -9,55 +9,57 @@
         :root { --bg-color: #121212; --text-color: #ffffff; --accent-color: #ffcc00; --panel-bg: #1e1e1e; }
         body { margin: 0; font-family: 'Segoe UI', sans-serif; background-color: var(--bg-color); color: var(--text-color); display: flex; flex-direction: column; align-items: center; padding: 20px; }
         
-        /* Fixed Size: Now it uses more of your screen! */
-        .container { width: 95%; max-width: 900px; background: var(--panel-bg); padding: 25px; border-radius: 15px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
+        .container { width: 90%; max-width: 900px; background: var(--panel-bg); padding: 25px; border-radius: 15px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
+        .nav-bar { width: 90%; max-width: 900px; display: flex; gap: 10px; margin-bottom: 20px; align-items: center; justify-content: space-between; }
         
-        .nav-bar { width: 95%; max-width: 900px; display: flex; gap: 10px; margin-bottom: 20px; }
         .btn { background: none; border: 2px solid var(--accent-color); color: var(--accent-color); padding: 10px 20px; cursor: pointer; border-radius: 5px; font-weight: bold; text-decoration: none; transition: 0.2s; }
         .btn:hover, .btn.active { background: var(--accent-color); color: #000; }
         
         .hidden { display: none !important; }
         
-        /* Message Box: Bigger and better */
-        #message-display { height: 450px; overflow-y: auto; background: #111; padding: 15px; margin-bottom: 15px; border-radius: 8px; border: 1px solid #333; }
+        #message-display { height: 400px; overflow-y: auto; background: #111; padding: 15px; margin-bottom: 15px; border-radius: 8px; border: 1px solid #333; }
         input { width: calc(100% - 24px); padding: 12px; margin: 10px 0; background: #333; border: 1px solid #444; color: white; border-radius: 5px; font-size: 16px; }
 
-        /* Status Dots */
-        .dot { height: 12px; width: 12px; border-radius: 50%; display: inline-block; margin-right: 8px; }
-        .online { background: #00ff00; box-shadow: 0 0 8px #00ff00; }
-        .idle { background: #ffcc00; }
-        .offline { background: #ff4d4d; }
+        /* Status Dot Styling */
+        .dot { height: 10px; width: 10px; border-radius: 50%; display: inline-block; margin-right: 6px; }
+        .online-dot { background: #00ff00; box-shadow: 0 0 5px #00ff00; }
+        .idle-dot { background: #ffcc00; }
+        .offline-dot { background: #ff4d4d; }
+        .status-text { font-size: 0.85rem; color: #bbb; margin-left: 4px; }
         
         .user-row { display: flex; justify-content: space-between; align-items: center; padding: 15px; background: #252525; border-radius: 8px; margin-bottom: 10px; }
+        #my-username-display { color: var(--accent-color); font-weight: bold; font-size: 0.9rem; }
     </style>
 </head>
 <body>
 
     <div id="login-screen" class="container" style="text-align: center; max-width: 400px;">
         <h1 style="color: var(--accent-color);">Chicken Social</h1>
-        <p>Pick a name to start chatting</p>
-        <input type="text" id="username-input" placeholder="Username...">
+        <input type="text" id="username-input" placeholder="Enter Username...">
         <button class="btn" style="width: 100%;" onclick="login()">Join Chat</button>
     </div>
 
     <div id="main-content" class="hidden" style="width: 100%; display: flex; flex-direction: column; align-items: center;">
         <div class="nav-bar">
-            <a href="index.html" class="btn">← Back to Games</a>
-            <button class="btn active" id="btn-friends" onclick="showTab('friends')">Online Users</button>
-            <button class="btn" id="btn-dms" onclick="showTab('dms')">Direct Messages</button>
+            <div>
+                <a href="index.html" class="btn">← Back</a>
+                <button class="btn active" id="btn-friends" onclick="showTab('friends')">Users</button>
+                <button class="btn" id="btn-dms" onclick="showTab('dms')">DMs</button>
+            </div>
+            <div id="my-username-display"></div>
         </div>
 
         <div id="friends-tab" class="container">
-            <h2 style="margin-top:0;">Global Users</h2>
+            <h2>Global Users</h2>
             <div id="friends-list">Searching for players...</div>
         </div>
 
         <div id="dms-tab" class="container hidden">
-            <h2 id="chat-header" style="margin-top:0;">Select a user</h2>
+            <h2 id="chat-header">Select a user</h2>
             <div id="message-display"></div>
             <div style="display: flex; gap: 10px;">
                 <input type="text" id="msg-input" placeholder="Type a message..." style="flex: 1;">
-                <button class="btn" onclick="sendMessage()" style="margin-top:10px; height: 45px;">Send</button>
+                <button class="btn" onclick="sendMessage()" style="margin-top:10px;">Send</button>
             </div>
         </div>
     </div>
@@ -80,11 +82,10 @@
             location.reload(); 
         }
 
-        // Heartbeat: Tells the database you are still there
         async function heartbeat() {
             if (!myUsername) return;
-            const status = document.hasFocus() ? 'online' : 'idle';
-            await sb.from('profiles').update({ last_seen: new Date().toISOString(), status: status }).eq('id', myId);
+            const currentStatus = document.hasFocus() ? 'online' : 'idle';
+            await sb.from('profiles').update({ last_seen: new Date().toISOString(), status: currentStatus }).eq('id', myId);
         }
 
         function showTab(tab) {
@@ -102,16 +103,25 @@
             data.forEach(u => {
                 if (u.id === myId) return;
 
-                // Logic for Dots
                 const lastSeen = new Date(u.last_seen);
-                const isRecent = (new Date() - lastSeen) < 60000; // Seen in last 60 seconds
-                let statusClass = 'offline';
-                if (isRecent) statusClass = u.status === 'idle' ? 'idle' : 'online';
+                const isRecent = (new Date() - lastSeen) < 60000; 
+                
+                let dotClass = 'offline-dot';
+                let label = 'Offline';
+
+                if (isRecent) {
+                    if (u.status === 'idle') { dotClass = 'idle-dot'; label = 'Idle'; }
+                    else { dotClass = 'online-dot'; label = 'Online'; }
+                }
 
                 list.innerHTML += `
                     <div class="user-row">
-                        <span><span class="dot ${statusClass}"></span><strong>${u.username}</strong></span>
-                        <button class="btn" onclick="startChat('${u.id}', '${u.username}')">Message</button>
+                        <span>
+                            <span class="dot ${dotClass}"></span>
+                            <strong>${u.username}</strong>
+                            <span class="status-text">${label}</span>
+                        </span>
+                        <button class="btn" onclick="startChat('${u.id}', '${u.username}')">Chat</button>
                     </div>`;
             });
         }
@@ -137,7 +147,7 @@
             const { data } = await sb.from('messages').select('*').or(`sender_id.eq.${myId},receiver_id.eq.${myId}`).order('created_at', { ascending: true });
             const display = document.getElementById('message-display');
             display.innerHTML = data.filter(m => (m.sender_id === currentPartner && m.receiver_id === myId) || (m.sender_id === myId && m.receiver_id === currentPartner))
-                .map(m => `<div style="text-align:${m.sender_id === myId ? 'right' : 'left'}; margin:8px;"><span style="background:${m.sender_id === myId ? '#ffcc00' : '#333'}; color:${m.sender_id === myId ? 'black' : 'white'}; padding:8px 15px; border-radius:15px; display:inline-block; max-width:70%;">${m.content}</span></div>`).join('');
+                .map(m => `<div style="text-align:${m.sender_id === myId ? 'right' : 'left'}; margin:8px;"><span style="background:${m.sender_id === myId ? '#ffcc00' : '#333'}; color:${m.sender_id === myId ? 'black' : 'white'}; padding:8px 15px; border-radius:15px; display:inline-block; max-width:75%;">${m.content}</span></div>`).join('');
             display.scrollTop = display.scrollHeight;
         }
 
@@ -145,9 +155,10 @@
             if (myUsername) {
                 document.getElementById('login-screen').classList.add('hidden');
                 document.getElementById('main-content').classList.remove('hidden');
+                document.getElementById('my-username-display').innerText = "by the way, your username is " + myUsername;
                 loadUsers();
-                setInterval(loadUsers, 5000); // Update dots every 5 seconds
-                setInterval(heartbeat, 10000); // Tell others you're online every 10 seconds
+                setInterval(loadUsers, 5000);
+                setInterval(heartbeat, 10000);
                 setInterval(loadMessages, 3000);
             }
         };
