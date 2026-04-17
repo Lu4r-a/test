@@ -73,18 +73,12 @@
 <body>
 
     <header>
-        <div>
-            <h1>Chicken Games</h1>
-            <div class="status-container">
-                <span class="dot"></span>
-                <span id="online-count">124 People Online</span>
-            </div>
-        </div>
-        <div class="nav-right">
-            <div id="user-info">Playtime: <span id="session-time">0m</span></div>
-            <button class="settings-btn" onclick="togglePanel('settings-panel')">Settings</button>
-        </div>
-    </header>
+    <h1>Chicken Games</h1>
+    <div>
+        <a href="social.html" class="settings-btn" style="text-decoration:none">Social</a>
+        <button class="settings-btn" onclick="toggleSettings()">Settings</button>
+    </div>
+</header>
 
     <div id="games"></div>
 
