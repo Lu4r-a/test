@@ -129,6 +129,10 @@
 
     <header>
         <h1>Chicken Games</h1>
+        <div style="text-align: center; margin: 20px 0; color: #ffcc00; font-family: 'Segoe UI', sans-serif; font-weight: bold;">
+    <span style="height: 12px; width: 12px; background: #00ff00; border-radius: 50%; display: inline-block; margin-right: 8px; box-shadow: 0 0 10px #00ff00;"></span>
+    <span id="global-online-count">0</span> Players Online
+</div>
         <div class="nav-buttons">
             <a href="social.html" class="btn-ui">Social</a>
             <button class="btn-ui" onclick="toggleSettings()">Settings</button>
@@ -269,5 +273,43 @@ const style = document.createElement('style');
 style.textContent = `@keyframes slideIn { from { transform: translateX(100%); } to { transform: translateX(0); } }`;
 document.head.append(style);
     </script>
+<script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+
+<script>
+    // Use the same credentials from your social.html
+    const INDEX_SB_URL = "https://ktubysfkhindjtnygxba.supabase.co";
+    const INDEX_SB_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imt0dWJ5c2ZraGluZGp0bnlneGJhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzYzMTI5MzUsImV4cCI6MjA5MTg4ODkzNX0._28tnrLXjsdGaMXLlV_kUkWZjD0z3acF0BgGcSH12k4";
+    const index_sb = supabase.createClient(INDEX_SB_URL, INDEX_SB_KEY);
+
+    async function updateGlobalCount() {
+        try {
+            // We only fetch 'last_seen' to keep it fast
+            const { data, error } = await index_sb.from('profiles').select('last_seen');
+            if (error) throw error;
+
+            const now = new Date().getTime();
+            let online = 0;
+
+            data.forEach(u => {
+                const lastSeen = new Date(u.last_seen).getTime();
+                // If they were active in the last 30 seconds, count them
+                if (Math.abs(now - lastSeen) < 30000) {
+                    online++;
+                }
+            });
+
+            const display = document.getElementById('global-online-count');
+            if (display) display.innerText = online;
+            
+        } catch (err) {
+            console.error("Counter error:", err);
+        }
+    }
+
+    // Refresh the number every 5 seconds
+    setInterval(updateGlobalCount, 5000);
+    // Run it immediately when page loads
+    updateGlobalCount();
+</script>
 </body>
 </html>
