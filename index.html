@@ -222,6 +222,52 @@
                 }
             }
         });
+// --- NOTIFICATION SYSTEM ---
+const SB_URL = "https://ktubysfkhindjtnygxba.supabase.co";
+const SB_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imt0dWJ5c2ZraGluZGp0bnlneGJhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzYzMTI5MzUsImV4cCI6MjA5MTg4ODkzNX0._28tnrLXjsdGaMXLlV_kUkWZjD0z3acF0BgGcSH12k4";
+
+// We need the Supabase library for this to work
+const script = document.createElement('script');
+script.src = "https://unpkg.com/@supabase/supabase-js@2";
+document.head.append(script);
+
+script.onload = () => {
+    const sb = supabase.createClient(SB_URL, SB_KEY);
+    const myId = localStorage.getItem('chicken-id');
+
+    if (myId) {
+        // Listen for new rows in the messages table
+        sb.channel('custom-filter-channel')
+          .on('postgres_changes', 
+              { event: 'INSERT', schema: 'public', table: 'messages', filter: `receiver_id=eq.${myId}` }, 
+              (payload) => {
+                  showNotification("New Message!", payload.new.content);
+              }
+          )
+          .subscribe();
+    }
+};
+
+function showNotification(title, body) {
+    const notif = document.createElement('div');
+    notif.style = `
+        position: fixed; bottom: 20px; right: 20px; 
+        background: var(--accent-color); color: #000; 
+        padding: 15px; border-radius: 10px; z-index: 3000;
+        box-shadow: 0 5px 15px rgba(0,0,0,0.5); font-weight: bold;
+        cursor: pointer; animation: slideIn 0.5s ease;
+    `;
+    notif.innerHTML = `<strong>${title}</strong><br>${body.substring(0, 30)}...`;
+    notif.onclick = () => window.location.href = 'social.html';
+    document.body.appendChild(notif);
+
+    setTimeout(() => notif.remove(), 5000); // Disappears after 5 seconds
+}
+
+// Add the slide-in animation to your <style> tag
+const style = document.createElement('style');
+style.textContent = `@keyframes slideIn { from { transform: translateX(100%); } to { transform: translateX(0); } }`;
+document.head.append(style);
     </script>
 </body>
 </html>
