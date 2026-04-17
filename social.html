@@ -65,107 +65,128 @@
     </div>
 
     <script>
-        const SB_URL = "https://ktubysfkhindjtnygxba.supabase.co";
-        const SB_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imt0dWJ5c2ZraGluZGp0bnlneGJhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzYzMTI5MzUsImV4cCI6MjA5MTg4ODkzNX0._28tnrLXjsdGaMXLlV_kUkWZjD0z3acF0BgGcSH12k4";
-        const sb = supabase.createClient(SB_URL, SB_KEY);
+        // Replace your entire <script> section with this:
 
-        let myId = localStorage.getItem('chicken-id') || "User-" + Math.floor(Math.random() * 9999);
-        let myUsername = localStorage.getItem('chicken-username');
-        let currentPartner = null;
+const SB_URL = "https://ktubysfkhindjtnygxba.supabase.co";
+const SB_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imt0dWJ5c2ZraGluZGp0bnlneGJhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzYzMTI5MzUsImV4cCI6MjA5MTg4ODkzNX0._28tnrLXjsdGaMXLlV_kUkWZjD0z3acF0BgGcSH12k4";
+const sb = supabase.createClient(SB_URL, SB_KEY);
 
-        async function login() {
-            const name = document.getElementById('username-input').value.trim();
-            if (name.length < 2) return alert("Name too short!");
-            localStorage.setItem('chicken-id', myId);
-            localStorage.setItem('chicken-username', name);
-            await sb.from('profiles').upsert({ id: myId, username: name, last_seen: new Date().toISOString(), status: 'online' });
-            location.reload(); 
-        }
+let myId = localStorage.getItem('chicken-id') || "User-" + Math.floor(Math.random() * 9999);
+let myUsername = localStorage.getItem('chicken-username');
+let currentPartner = null;
 
-        // Heartbeat: Updates your status every 5 seconds so others see you as "Online"
-        async function heartbeat() {
-            if (!myUsername) return;
-            const currentStatus = document.hasFocus() ? 'online' : 'idle';
-            await sb.from('profiles').update({ last_seen: new Date().toISOString(), status: currentStatus }).eq('id', myId);
-        }
+async function login() {
+    const name = document.getElementById('username-input').value.trim();
+    if (name.length < 2) return alert("Name too short!");
+    localStorage.setItem('chicken-id', myId);
+    localStorage.setItem('chicken-username', name);
+    await sb.from('profiles').upsert({ id: myId, username: name, last_seen: new Date().toISOString(), status: 'online' });
+    location.reload(); 
+}
 
-        function showTab(tab) {
-            document.getElementById('friends-tab').classList.toggle('hidden', tab !== 'friends');
-            document.getElementById('dms-tab').classList.toggle('hidden', tab !== 'dms');
-            document.getElementById('btn-friends').classList.toggle('active', tab === 'friends');
-            document.getElementById('btn-dms').classList.toggle('active', tab === 'dms');
-        }
+async function heartbeat() {
+    if (!myUsername) return;
+    const currentStatus = document.hasFocus() ? 'online' : 'idle';
+    await sb.from('profiles').update({ last_seen: new Date().toISOString(), status: currentStatus }).eq('id', myId);
+}
 
-        async function loadUsers() {
-            const { data } = await sb.from('profiles').select('*');
-            const list = document.getElementById('friends-list');
-            list.innerHTML = "";
-            
-            data.forEach(u => {
-                if (u.id === myId) return;
+async function loadUsers() {
+    const { data: allUsers } = await sb.from('profiles').select('*');
+    // Fetch friendship status
+    const { data: myFriends } = await sb.from('friends').select('*').or(`user_id.eq.${myId},friend_id.eq.${myId}`);
+    
+    const list = document.getElementById('friends-list');
+    list.innerHTML = "";
+    
+    allUsers.forEach(u => {
+        if (u.id === myId) return;
 
-                const lastSeen = new Date(u.last_seen);
-                // If they haven't sent a heartbeat in 15 seconds, they are "Offline"
-                const isRecent = (new Date() - lastSeen) < 15000; 
-                
-                let dotClass = 'offline-dot';
-                let label = 'Offline';
+        // Check friendship logic
+        const friendship = myFriends.find(f => f.user_id === u.id || f.friend_id === u.id);
+        const isAccepted = friendship && friendship.status === 'accepted';
+        const isPending = friendship && friendship.status === 'pending';
 
-                if (isRecent) {
-                    if (u.status === 'idle') { dotClass = 'idle-dot'; label = 'Idle'; }
-                    else { dotClass = 'online-dot'; label = 'Online'; }
-                }
+        const lastSeen = new Date(u.last_seen);
+        const isRecent = (new Date() - lastSeen) < 15000; 
+        let dotClass = isRecent ? (u.status === 'idle' ? 'idle-dot' : 'online-dot') : 'offline-dot';
+        let statusLabel = isRecent ? (u.status === 'idle' ? 'Idle' : 'Online') : 'Offline';
 
-                list.innerHTML += `
-                    <div class="user-row">
-                        <span>
-                            <span class="dot ${dotClass}"></span>
-                            <strong>${u.username}</strong>
-                            <span class="status-text">${label}</span>
-                        </span>
-                        <button class="btn" onclick="startChat('${u.id}', '${u.username}')">Chat</button>
-                    </div>`;
-            });
-        }
-
-        function startChat(id, name) {
-            currentPartner = id;
-            document.getElementById('chat-header').innerText = "Chatting with " + name;
-            showTab('dms');
-            loadMessages();
-        }
-
-        async function sendMessage() {
-            const input = document.getElementById('msg-input');
-            const content = input.value.trim();
-            if (!content || !currentPartner) return;
-            await sb.from('messages').insert([{ sender_id: myId, receiver_id: currentPartner, content: content }]);
-            input.value = "";
-            loadMessages();
-        }
-
-        async function loadMessages() {
-            if (!currentPartner) return;
-            const { data } = await sb.from('messages').select('*').or(`sender_id.eq.${myId},receiver_id.eq.${myId}`).order('created_at', { ascending: true });
-            const display = document.getElementById('message-display');
-            display.innerHTML = data.filter(m => (m.sender_id === currentPartner && m.receiver_id === myId) || (m.sender_id === myId && m.receiver_id === currentPartner))
-                .map(m => `<div style="text-align:${m.sender_id === myId ? 'right' : 'left'}; margin:8px;"><span style="background:${m.sender_id === myId ? '#ffcc00' : '#333'}; color:${m.sender_id === myId ? 'black' : 'white'}; padding:8px 15px; border-radius:15px; display:inline-block; max-width:75%;">${m.content}</span></div>`).join('');
-            display.scrollTop = display.scrollHeight;
-        }
-
-        window.onload = () => {
-            if (myUsername) {
-                document.getElementById('login-screen').classList.add('hidden');
-                document.getElementById('main-content').classList.remove('hidden');
-                document.getElementById('my-username-display').innerText = "by the way, your username is " + myUsername;
-                
-                loadUsers();
-                // REFRESH TIMERS
-                setInterval(loadUsers, 3000);    // Refreshes the dot & labels every 3 seconds
-                setInterval(heartbeat, 5000);    // Tells the DB you are online every 5 seconds
-                setInterval(loadMessages, 3000); // Refreshes chat messages every 3 seconds
+        let actionButton = `<button class="btn" onclick="sendFriendRequest('${u.id}')">Add Friend</button>`;
+        if (isAccepted) {
+            actionButton = `<button class="btn" onclick="startChat('${u.id}', '${u.username}')">Chat</button>`;
+        } else if (isPending) {
+            if (friendship.friend_id === myId) {
+                actionButton = `<button class="btn" onclick="acceptFriend('${friendship.id}')" style="background:white; color:black;">Accept Request</button>`;
+            } else {
+                actionButton = `<span style="color:gray; font-size:12px;">Request Sent</span>`;
             }
-        };
+        }
+
+        list.innerHTML += `
+            <div class="user-row">
+                <span>
+                    <span class="dot ${dotClass}"></span>
+                    <strong>${u.username}</strong>
+                    <span class="status-text">${statusLabel}</span>
+                </span>
+                ${actionButton}
+            </div>`;
+    });
+}
+
+async function sendFriendRequest(targetId) {
+    await sb.from('friends').insert([{ user_id: myId, friend_id: targetId, status: 'pending' }]);
+    loadUsers();
+}
+
+async function acceptFriend(requestId) {
+    await sb.from('friends').update({ status: 'accepted' }).eq('id', requestId);
+    loadUsers();
+}
+
+function startChat(id, name) {
+    currentPartner = id;
+    document.getElementById('chat-header').innerText = "Chatting with " + name;
+    showTab('dms');
+    loadMessages();
+}
+
+async function sendMessage() {
+    const input = document.getElementById('msg-input');
+    const content = input.value.trim();
+    if (!content || !currentPartner) return;
+    await sb.from('messages').insert([{ sender_id: myId, receiver_id: currentPartner, content: content }]);
+    input.value = "";
+    loadMessages();
+}
+
+async function loadMessages() {
+    if (!currentPartner) return;
+    const { data } = await sb.from('messages').select('*').or(`sender_id.eq.${myId},receiver_id.eq.${myId}`).order('created_at', { ascending: true });
+    const display = document.getElementById('message-display');
+    display.innerHTML = data.filter(m => (m.sender_id === currentPartner && m.receiver_id === myId) || (m.sender_id === myId && m.receiver_id === currentPartner))
+        .map(m => `<div style="text-align:${m.sender_id === myId ? 'right' : 'left'}; margin:8px;"><span style="background:${m.sender_id === myId ? '#ffcc00' : '#333'}; color:${m.sender_id === myId ? 'black' : 'white'}; padding:8px 15px; border-radius:15px; display:inline-block; max-width:75%;">${m.content}</span></div>`).join('');
+    display.scrollTop = display.scrollHeight;
+}
+
+function showTab(tab) {
+    document.getElementById('friends-tab').classList.toggle('hidden', tab !== 'friends');
+    document.getElementById('dms-tab').classList.toggle('hidden', tab !== 'dms');
+    document.getElementById('btn-friends').classList.toggle('active', tab === 'friends');
+    document.getElementById('btn-dms').classList.toggle('active', tab === 'dms');
+}
+
+window.onload = () => {
+    if (myUsername) {
+        document.getElementById('login-screen').classList.add('hidden');
+        document.getElementById('main-content').classList.remove('hidden');
+        document.getElementById('my-username-display').innerText = "by the way, your username is " + myUsername;
+        loadUsers();
+        setInterval(loadUsers, 3000);    // 3-second status refresh
+        setInterval(heartbeat, 5000);
+        setInterval(loadMessages, 3000);
+    }
+};
     </script>
 </body>
 </html>
